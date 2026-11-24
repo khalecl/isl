@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Immersive Story Lab — Day 3</title>
+<meta name="description" content="Data Visualisation & Storytelling, Day 3: three levels of interactive and immersive visualisation, using practice data from a fictional projects company.">
+<meta name="theme-color" content="#0f1724">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Story Lab">
+<style>
+  :root{
+    --bg:#0f1724; --panel:#17212f; --panel2:#1f2b3c; --line:#2c3a4f;
+    --text:#e8edf4; --muted:#9aa8bb; --accent:#4c9aff;
+    --risk:#e5484d; --watch:#f5a524; --ok:#30a46c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
+  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:center;gap:10px;padding:10px 14px calc(6px) 14px;
+    padding-top:max(10px,env(safe-area-inset-top))}
+  header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .sub{color:var(--muted);font-size:12px}
+  .badge{margin-left:auto;font-size:11px;padding:3px 8px;border:1px solid var(--watch);color:var(--watch);border-radius:99px;white-space:nowrap}
+  nav{display:flex;gap:6px;padding:0 10px 8px;overflow-x:auto}
+  nav button{flex:1 0 auto;background:var(--panel);color:var(--muted);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;text-align:left;min-width:96px}
+  nav button b{display:block;color:var(--text);font-size:13px}
+  nav button.on{border-color:var(--accent);background:#1b2d47;color:#cfe2ff}
+  #stage{position:relative;flex:1;min-height:0}
+  #stage canvas{display:block;width:100%;height:100%;touch-action:none}
+  .hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#0009;color:#dfe7f1;
+    padding:4px 10px;border-radius:99px;font-size:12px;pointer-events:none;white-space:nowrap}
+  .chips{position:absolute;top:36px;left:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .chip{background:#0b1220cc;border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:3px 9px;font-size:12px;cursor:pointer}
+  .chip.on{color:var(--text);border-color:#5b6f8c;background:#22324acc}
+  .legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;background:#0b1220cc;padding:5px 9px;border-radius:8px;font-size:12px}
+  .legend.top{bottom:auto;top:40px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+  .sheet{background:var(--panel);border-top:1px solid var(--line);padding:12px 14px;
+    padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .sheet h2{margin:0 0 4px;font-size:15px}
+  .sheet p{margin:0;color:#cdd6e2;font-size:14px}
+  .row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06121f;font-weight:600}
+  .btn:disabled{opacity:.4;cursor:default}
+  .dots{display:flex;gap:5px;margin:0 auto}
+  .dots span{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .dots span.on{background:var(--accent)}
+  .card{position:absolute;right:10px;top:70px;width:250px;background:#111a27f2;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;display:none}
+  .card h3{margin:0 0 2px;font-size:14px}
+  .card .sec{color:var(--muted);margin-bottom:8px}
+  .card table{width:100%;border-collapse:collapse}
+  .card td{padding:2px 0}.card td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .card .x{position:absolute;right:8px;top:6px;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
+  .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;color:#081019;font-weight:600}
+  #flat{position:absolute;right:10px;top:70px;background:#0b1220ee;border:1px solid var(--line);border-radius:12px;padding:8px;display:none}
+  #flat .t{font-size:12px;color:var(--muted);margin:0 2px 4px}
+  .panelInfo{position:absolute;inset:auto 10px 10px 10px;background:#0b1220e6;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;display:none}
+  .score{font-weight:650}
+  #arOverlay{display:none;position:fixed;inset:0;pointer-events:none;font:15px system-ui,sans-serif;color:#fff}
+  #arOverlay .top{pointer-events:auto;margin:max(12px,env(safe-area-inset-top)) 12px 0;background:#000a;border-radius:12px;padding:10px 12px}
+  #arOverlay .bar{position:absolute;left:12px;right:12px;bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:8px;pointer-events:auto}
+  #arOverlay .bar button{flex:1;padding:12px;border-radius:10px;border:0;font:600 15px system-ui;background:#ffffffe6;color:#0b1220}
+  #arOverlay .bar button.on{background:var(--accent)}
+  .about{position:absolute;inset:0;overflow:auto;padding:16px;display:none;background:var(--bg)}
+  .about h2{font-size:17px;margin:4px 0 8px}.about h3{font-size:15px;margin:16px 0 6px}
+  .about p,.about li{color:#cdd6e2;max-width:720px}
+  .about table{border-collapse:collapse;font-size:13px;margin:6px 0}
+  .about td,.about th{border:1px solid var(--line);padding:4px 8px;text-align:left}
+  a{color:#8cc1ff}
+  @media (min-width:900px){ .sheet{display:flex;gap:20px;align-items:center} .sheet .txt{flex:1} .sheet .row{margin-top:0} }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Immersive Story Lab</h1>
+    <div class="sub">Day 3 · Atlas Projects Group portfolio</div>
+  </div>
+  <span class="badge" title="All figures are invented for training">Practice data</span>
+</header>
+
+<nav id="tabs">
+  <button data-level="1" class="on"><b>Level 1</b>Interactive screen</button>
+  <button data-level="2"><b>Level 2</b>AR on your desk</button>
+  <button data-level="3"><b>Level 3</b>Space to think</button>
+  <button data-level="0"><b>Guide</b>How to use</button>
+</nav>
+
+<div id="stage">
+  <div class="hint" id="hint">Drag to rotate · tap a bar</div>
+  <div class="chips" id="chips"></div>
+  <div class="legend" id="legend"></div>
+  <div class="card" id="card"></div>
+  <div id="flat"><div class="t">Same data, flat and sorted: forecast overrun (USD M)</div><canvas id="flatCanvas" width="300" height="300"></canvas></div>
+  <div class="panelInfo" id="arInfo"></div>
+  <div class="about" id="about"></div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="txt">
+    <h2 id="stepTitle"></h2>
+    <p id="stepText"></p>
+  </div>
+  <div class="row" id="controls"></div>
+</div>
+
+<div id="arOverlay">
+  <div class="top" id="arTop">Move your phone slowly over a flat surface. When the ring appears, tap to place the portfolio.</div>
+  <div class="bar">
+    <button id="arBudget" class="on">Budget</button>
+    <button id="arOverrun">Overrun</button>
+    <button id="arExit">Exit AR</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<script type="module" src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
