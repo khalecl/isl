@@ -1,7 +1,7 @@
 // Offline cache for the Story Lab. Change VERSION after editing any file so phones pick up the update.
-const VERSION = 'storylab-v1';
+const VERSION = 'storylab-v2';
 const FILES = [
-  './', './index.html', './app.js', './data.js', './manifest.webmanifest',
+  './', './index.html', './app.js', './data.js', './charts.js', './panels.js', './dashboard.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
   './vendor/three/three.module.js',
   './vendor/three/addons/exporters/USDZExporter.js',

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Immersive Story Lab — Day 3</title>
-<meta name="description" content="Data Visualisation & Storytelling, Day 3: three levels of interactive and immersive visualisation, using practice data from a fictional projects company.">
-<meta name="theme-color" content="#0f1724">
+<title>Immersive Story Lab — Project Portfolio Command Centre</title>
+<meta name="description" content="Data Visualisation & Storytelling, Day 3: a project-portfolio dashboard at three levels of interactivity and immersion. Practice data.">
+<meta name="theme-color" content="#0b0f24">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -13,122 +13,146 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Story Lab">
 <style>
-  :root{
-    --bg:#0f1724; --panel:#17212f; --panel2:#1f2b3c; --line:#2c3a4f;
-    --text:#e8edf4; --muted:#9aa8bb; --accent:#4c9aff;
-    --risk:#e5484d; --watch:#f5a524; --ok:#30a46c;
-  }
+  :root{ --text:#e6efff; --muted:#93a4c3; --line:rgba(255,255,255,.12); --accent:#38bdf8; --violet:#a78bfa;
+    --risk:#f0505a; --watch:#f5a524; --ok:#2fbf7a;
+    --s-Utilities:#38bdf8; --s-Transport:#a78bfa; --s-Health:#f472b6; --s-Energy:#facc15; --s-Industrial:#fb923c; --s-Education:#34d399; --s-Commercial:#60a5fa; }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
-    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
-  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
-  header{display:flex;align-items:center;gap:10px;padding:10px 14px calc(6px) 14px;
-    padding-top:max(10px,env(safe-area-inset-top))}
-  header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
-  header .sub{color:var(--muted);font-size:12px}
-  .badge{margin-left:auto;font-size:11px;padding:3px 8px;border:1px solid var(--watch);color:var(--watch);border-radius:99px;white-space:nowrap}
+  html,body{margin:0;height:100%;color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overscroll-behavior:none}
+  body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+    background:radial-gradient(1200px 700px at 10% -10%,#3b1d6e 0%,transparent 60%),radial-gradient(900px 600px at 110% 20%,#0e3b66 0%,transparent 60%),linear-gradient(160deg,#0b0f24,#120c2c 55%,#071a2b)}
+  header{display:flex;align-items:center;gap:12px;padding:10px 14px 6px;padding-top:max(10px,env(safe-area-inset-top));flex-wrap:wrap}
+  .brand h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
+  .brand .sub{color:var(--muted);font-size:12px}
+  .clock{margin-left:auto;display:flex;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+  .clock .t{font-size:20px;font-weight:700}
+  .clock .d{font-size:11px;color:var(--muted);line-height:1.2}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#ff8a90;border:1px solid #ff8a9066;padding:3px 8px;border-radius:99px}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:#ff4d5a;box-shadow:0 0 0 0 #ff4d5a;animation:pulse 1.6s infinite;flex:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 #ff4d5a99}70%{box-shadow:0 0 0 8px #ff4d5a00}100%{box-shadow:0 0 0 0 #ff4d5a00}}
+  .badge{font-size:11px;padding:3px 8px;border:1px solid var(--watch);color:var(--watch);border-radius:99px;white-space:nowrap}
   nav{display:flex;gap:6px;padding:0 10px 8px;overflow-x:auto}
-  nav button{flex:1 0 auto;background:var(--panel);color:var(--muted);border:1px solid var(--line);
-    border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;text-align:left;min-width:96px}
+  nav button{flex:1 0 auto;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:7px 12px;font:inherit;font-size:12.5px;cursor:pointer;text-align:left;min-width:110px;backdrop-filter:blur(8px)}
   nav button b{display:block;color:var(--text);font-size:13px}
-  nav button.on{border-color:var(--accent);background:#1b2d47;color:#cfe2ff}
-  #stage{position:relative;flex:1;min-height:0}
-  #stage canvas{display:block;width:100%;height:100%;touch-action:none}
-  .hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#0009;color:#dfe7f1;
-    padding:4px 10px;border-radius:99px;font-size:12px;pointer-events:none;white-space:nowrap}
-  .chips{position:absolute;top:36px;left:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  .chip{background:#0b1220cc;border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:3px 9px;font-size:12px;cursor:pointer}
-  .chip.on{color:var(--text);border-color:#5b6f8c;background:#22324acc}
-  .legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;background:#0b1220cc;padding:5px 9px;border-radius:8px;font-size:12px}
-  .legend.top{bottom:auto;top:40px}
-  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
-  .sheet{background:var(--panel);border-top:1px solid var(--line);padding:12px 14px;
-    padding-bottom:max(12px,env(safe-area-inset-bottom))}
-  .sheet h2{margin:0 0 4px;font-size:15px}
-  .sheet p{margin:0;color:#cdd6e2;font-size:14px}
-  .row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06121f;font-weight:600}
+  nav button.on{border-color:var(--accent);background:rgba(56,189,248,.14);color:#cfeaff}
+  main{position:relative;flex:1;min-height:0}
+  #dash{position:absolute;inset:0;overflow:auto;padding:4px 12px 90px;-webkit-overflow-scrolling:touch}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;user-select:none}
+  .chip.on{color:#fff;border-color:var(--accent);background:rgba(56,189,248,.18)}
+  select,input[type=search]{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font:inherit;font-size:13px}
+  select option{background:#151a33}
+  .btn{background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer}
+  .btn.primary{background:linear-gradient(135deg,#38bdf8,#818cf8);border-color:transparent;color:#061022;font-weight:700}
   .btn:disabled{opacity:.4;cursor:default}
-  .dots{display:flex;gap:5px;margin:0 auto}
-  .dots span{width:7px;height:7px;border-radius:50%;background:var(--line)}
-  .dots span.on{background:var(--accent)}
-  .card{position:absolute;right:10px;top:70px;width:250px;background:#111a27f2;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;display:none}
-  .card h3{margin:0 0 2px;font-size:14px}
-  .card .sec{color:var(--muted);margin-bottom:8px}
-  .card table{width:100%;border-collapse:collapse}
-  .card td{padding:2px 0}.card td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .card .x{position:absolute;right:8px;top:6px;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
-  .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;color:#081019;font-weight:600}
-  #flat{position:absolute;right:10px;top:70px;background:#0b1220ee;border:1px solid var(--line);border-radius:12px;padding:8px;display:none}
-  #flat .t{font-size:12px;color:var(--muted);margin:0 2px 4px}
-  .panelInfo{position:absolute;inset:auto 10px 10px 10px;background:#0b1220e6;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;display:none}
-  .score{font-weight:650}
+  .ticker{display:flex;align-items:center;gap:10px;background:rgba(255,77,90,.08);border:1px solid rgba(255,77,90,.25);border-radius:10px;padding:6px 12px;margin-bottom:10px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .panel{background:linear-gradient(160deg,rgba(255,255,255,.085),rgba(255,255,255,.025));border:1px solid var(--line);border-radius:16px;padding:10px 12px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.25);transition:opacity .3s, box-shadow .3s}
+  .panel h3{margin:0 0 6px;font-size:12.5px;font-weight:650;color:#cfe0ff;letter-spacing:.2px}
+  .panel.dim{opacity:.22}
+  .panel.spot{box-shadow:0 0 0 2px var(--accent),0 0 40px rgba(56,189,248,.35)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;padding:8px}
+  .kpi{position:relative;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:9px 11px;overflow:hidden;min-height:76px}
+  .kpi .k{font-size:11px;color:var(--muted)}
+  .kpi .v{font-size:22px;font-weight:750;font-variant-numeric:tabular-nums;margin-top:2px}
+  .kpi .v.sm{font-size:16px}
+  .kpi .s{font-size:11px;color:var(--muted)}
+  .kpi.bad .v{color:#ff8a90}
+  .kpi .spark{position:absolute;right:8px;bottom:8px;width:70px;height:28px;opacity:.9}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:10px}
+  .g-3{grid-column:span 3}.g-4{grid-column:span 4}.g-6{grid-column:span 6}.g-8{grid-column:span 8}.g-12{grid-column:span 12}
+  .cv{position:relative;height:230px}
+  .cv canvas{position:absolute;inset:0;width:100%;height:100%}
+  @media (max-width:700px){ #pn-gauges .cv{height:170px} }
+  .h160{height:160px}.h180{height:180px}.h200{height:200px}.h220{height:220px}
+  .tablewrap{overflow:auto;max-height:560px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th{position:sticky;top:0;background:#1a1d3c;color:var(--muted);font-weight:600;text-align:left;padding:7px 8px;white-space:nowrap;border-bottom:1px solid var(--line)}
+  th.sortable{cursor:pointer} th.sorted{color:#fff}
+  td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap}
+  tbody tr{cursor:pointer} tbody tr:hover{background:rgba(56,189,248,.08)}
+  tr.hl{background:rgba(240,80,90,.15)!important;box-shadow:inset 3px 0 0 var(--risk)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;color:#081019;font-weight:700}
+  .pill.big{font-size:13px;padding:4px 12px}
+  .pill{white-space:nowrap}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .prog{display:inline-block;width:60px;height:6px;border-radius:99px;background:rgba(255,255,255,.1);margin-right:6px;vertical-align:middle;overflow:hidden}
+  .prog span{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8)}
+  canvas.tspark{width:80px;height:24px;display:block}
+  .muted{color:var(--muted);font-weight:400}.small{font-size:11px}
+  .foot{color:var(--muted);font-size:11.5px;text-align:center}
+  #tip{position:fixed;z-index:50;display:none;background:#0d1230f2;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;pointer-events:none;max-width:260px;box-shadow:0 8px 24px #0008}
+  #tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+  #drawer{position:fixed;z-index:40;top:0;right:0;bottom:0;width:min(720px,100%);background:linear-gradient(170deg,#171a3d,#0d1129);border-left:1px solid var(--line);
+    transform:translateX(105%);transition:transform .35s ease;overflow:auto;padding:14px 14px 40px;padding-top:max(14px,env(safe-area-inset-top));box-shadow:-20px 0 60px #0009}
+  #drawer.open{transform:none}
+  #drawerClose{position:sticky;top:0;float:right;z-index:2}
+  .dhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin:4px 0 10px}
+  .dhead h2{margin:2px 0 0;font-size:18px}
+  .dtiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .dtiles .kpi{min-height:0}
+  .dgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
+  .rtable td,.rtable th{white-space:normal;position:static}
+  #storyBar{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));width:min(760px,calc(100% - 20px));
+    display:none;gap:10px;align-items:center;background:#10163af2;border:1px solid var(--accent);border-radius:14px;padding:10px 12px;box-shadow:0 10px 40px #000a;flex-wrap:wrap}
+  #storyText{flex:1 1 300px;font-size:13.5px}
+  #stage{position:absolute;inset:0;display:none}
+  #stage canvas{display:block;width:100%;height:100%;touch-action:none}
+  .hint{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#0009;color:#dfe7f1;padding:4px 10px;border-radius:99px;font-size:12px;pointer-events:none;white-space:nowrap}
+  .sheet{position:absolute;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));background:#10163ae6;border:1px solid var(--line);border-radius:14px;padding:10px 12px;backdrop-filter:blur(10px)}
+  .sheet h2{margin:0 0 3px;font-size:14px}.sheet p{margin:0;color:#cdd6e2;font-size:13px}
+  .row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .score{font-weight:700}
   #arOverlay{display:none;position:fixed;inset:0;pointer-events:none;font:15px system-ui,sans-serif;color:#fff}
   #arOverlay .top{pointer-events:auto;margin:max(12px,env(safe-area-inset-top)) 12px 0;background:#000a;border-radius:12px;padding:10px 12px}
   #arOverlay .bar{position:absolute;left:12px;right:12px;bottom:max(16px,env(safe-area-inset-bottom));display:flex;gap:8px;pointer-events:auto}
   #arOverlay .bar button{flex:1;padding:12px;border-radius:10px;border:0;font:600 15px system-ui;background:#ffffffe6;color:#0b1220}
   #arOverlay .bar button.on{background:var(--accent)}
-  .about{position:absolute;inset:0;overflow:auto;padding:16px;display:none;background:var(--bg)}
+  .about{position:absolute;inset:0;overflow:auto;padding:16px;display:none}
   .about h2{font-size:17px;margin:4px 0 8px}.about h3{font-size:15px;margin:16px 0 6px}
-  .about p,.about li{color:#cdd6e2;max-width:720px}
-  .about table{border-collapse:collapse;font-size:13px;margin:6px 0}
-  .about td,.about th{border:1px solid var(--line);padding:4px 8px;text-align:left}
+  .about p,.about li{color:#cdd6e2;max-width:760px}
+  .about table{width:auto;margin:6px 0}.about td,.about th{border:1px solid var(--line);padding:5px 8px;white-space:normal;position:static}
   a{color:#8cc1ff}
-  @media (min-width:900px){ .sheet{display:flex;gap:20px;align-items:center} .sheet .txt{flex:1} .sheet .row{margin-top:0} }
+  @media (max-width:1100px){ .g-3{grid-column:span 6} .g-4{grid-column:span 6} .g-8{grid-column:span 12} }
+  @media (max-width:700px){ .grid{grid-template-columns:1fr} .grid>.panel{grid-column:1/-1} .kpis{grid-template-columns:repeat(2,1fr)} .kpi .v{font-size:19px}
+    .kpi .spark{width:54px;height:22px} .clock .t{font-size:17px} .dtiles{grid-template-columns:repeat(2,1fr)} .dgrid>.panel{grid-column:1/-1}
+    input[type=search]{flex:1;min-width:140px} .brand .sub{display:none} header{flex-wrap:nowrap;gap:8px} .clock{gap:6px} .clock .d{display:none} .brand h1{font-size:14px}
+    .live{padding:2px 6px} .badge{font-size:10px;padding:2px 6px} nav button{min-width:96px;padding:6px 9px} }
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1>Immersive Story Lab</h1>
-    <div class="sub">Day 3 · Atlas Projects Group portfolio</div>
-  </div>
-  <span class="badge" title="All figures are invented for training">Practice data</span>
+  <div class="brand"><h1>Immersive Story Lab</h1><div class="sub">Project Portfolio Command Centre · Day 3</div></div>
+  <div class="clock"><span class="live"><span class="live-dot"></span>LIVE</span><div><div class="t" id="clockT">--:--:--</div><div class="d" id="clockD"></div></div><span class="badge" title="All figures are invented for training">Practice data</span></div>
 </header>
-
 <nav id="tabs">
-  <button data-level="1" class="on"><b>Level 1</b>Interactive screen</button>
+  <button data-level="1" class="on"><b>Level 1</b>Interactive dashboard</button>
   <button data-level="2"><b>Level 2</b>AR on your desk</button>
-  <button data-level="3"><b>Level 3</b>Space to think</button>
+  <button data-level="3"><b>Level 3</b>Immersive wall</button>
   <button data-level="0"><b>Guide</b>How to use</button>
 </nav>
-
-<div id="stage">
-  <div class="hint" id="hint">Drag to rotate · tap a bar</div>
-  <div class="chips" id="chips"></div>
-  <div class="legend" id="legend"></div>
-  <div class="card" id="card"></div>
-  <div id="flat"><div class="t">Same data, flat and sorted: forecast overrun (USD M)</div><canvas id="flatCanvas" width="300" height="300"></canvas></div>
-  <div class="panelInfo" id="arInfo"></div>
-  <div class="about" id="about"></div>
-</div>
-
-<div class="sheet" id="sheet">
-  <div class="txt">
-    <h2 id="stepTitle"></h2>
-    <p id="stepText"></p>
+<main>
+  <div id="dash"></div>
+  <div id="stage">
+    <div class="hint" id="hint"></div>
+    <div class="sheet" id="sheet"><h2 id="stepTitle"></h2><p id="stepText"></p><div class="row" id="controls"></div></div>
   </div>
-  <div class="row" id="controls"></div>
-</div>
-
+  <div class="about" id="about"></div>
+</main>
+<div id="tip"></div>
+<aside id="drawer"><button class="btn" id="drawerClose">✕ Close</button><div id="drawerBody"></div></aside>
+<div id="storyBar"><div id="storyText"></div><button class="btn" id="storyPrev">Back</button><button class="btn primary" id="storyNext">Next</button><button class="btn" id="storyClose">✕</button></div>
 <div id="arOverlay">
   <div class="top" id="arTop">Move your phone slowly over a flat surface. When the ring appears, tap to place the portfolio.</div>
-  <div class="bar">
-    <button id="arBudget" class="on">Budget</button>
-    <button id="arOverrun">Overrun</button>
-    <button id="arExit">Exit AR</button>
-  </div>
+  <div class="bar"><button id="arBudget" class="on">Budget</button><button id="arOverrun">Overrun</button><button id="arExit">Exit AR</button></div>
 </div>
-
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
 <script type="module" src="app.js"></script>
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-  }
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
 </body>
 </html>

@@ -9,9 +9,11 @@ It tells one data story about a project portfolio at three levels of interactivi
 
 | Level | What trainees do | Devices |
 |---|---|---|
-| 1 · Interactive screen | Five-step guided story: budget → cost health (CPI) → forecast overrun → 3D pitfall vs flat chart → decision. Rotate, zoom, filter by sector, tap bars for EVM details. | Any phone, tablet or PC |
-| 2 · AR on your desk | Place the portfolio model on a real desk and walk around it. Switch Budget / Overrun. | Android + Chrome: live WebXR AR. iPhone/iPad + Safari: Apple Quick Look (fixed model). Others: 3D preview. |
-| 3 · Space to think | 12 project cards surround the user. Compute CPI = EV ÷ AC and sort cards into At risk / Watch / On track, then Check (score + CPI revealed). | Any device (drag to look). Full VR in a headset browser (e.g. Meta Quest Browser). |
+| 1 · Interactive dashboard | Command-centre dashboard: live clock, 8 KPI tiles with sparklines, CPI/SPI/% complete gauges, portfolio S-curve (PV/EV/AC + forecast), sorted overrun bars, CPI-vs-SPI bubble matrix, budget-by-sector donut, monthly spend, 5×5 risk heat map, safety & quality tiles, live site feed and alerts. Filter by sector/region/status, search, sortable project register, and a full drill-down per project (S-curve, milestone Gantt, cost breakdown, CPI trend, top risks, HSE). **Play the data story** runs a guided 5-step narrative that spotlights panels. | Any phone, tablet or PC |
+| 2 · AR on your desk | 3D portfolio model with a floating live gauge panel, placed on a real desk. Switch Budget / Overrun. | Android + Chrome: live WebXR AR. iPhone/iPad + Safari: Apple Quick Look (fixed model). Others: 3D preview. |
+| 3 · Immersive wall | 12 live glass panels on a curved wall around the user; tap to pull a panel closer. Then the sorting activity: compute CPI = EV ÷ AC and group 12 project cards in space, then Check. | Any device (drag to look). Full VR in a headset browser (e.g. Meta Quest Browser). |
+
+The live feed is **simulated**: every 2 seconds costs, crews and equipment utilisation tick forward slightly and alerts are generated.
 
 ## Publish on GitHub Pages (about 5 minutes)
 
@@ -34,13 +36,13 @@ The app works offline after the first visit.
 
 ## Changing the data
 
-Edit `data.js`. Each project has a budget (BAC), percent complete, planned value (PV) and actual cost (AC). EV, CPI, SPI, EAC, overrun, colour band and all story text are calculated automatically.
+Edit `data.js`. Each project has a region, PM, start month, a budget (BAC), percent complete, planned value (PV) and actual cost (AC). EV, CPI, SPI, EAC, S-curves, milestones, risks, HSE figures, colour band and all story text are calculated automatically.
 After any edit, change `VERSION` in `sw.js` (e.g. `storylab-v2`) so installed copies update.
 
 ## Trainer notes
 
 - **Model answer, Level 3:** At risk: P01, P02, P07, P08, P11 · Watch: P06, P09 · On track: P03, P04, P05, P10, P12. The app checks this automatically.
-- **Pitfall step (Level 1, step 4):** near bars look taller than far ones and bars hide each other; the flat sorted chart fixes both. Use this to link back to Day 1 pitfalls.
+- **Pitfall step (story step 4):** ranking sectors from the donut is slow; the sorted bar answers ranking questions at a glance. Level 2 shows the 3D occlusion pitfall (bars hiding bars).
 - **Discussion:** which level helped trainees *find* the problem, and which helped them *explain* it? Immersion suits exploring and presenting; the decision itself is usually clearest in 2D.
 
 ## Technical
