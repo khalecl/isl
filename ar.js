@@ -256,7 +256,7 @@ export function renderLevel2(supportsAR, supportsQuickLook) {
 }
 // ---------- per-frame / input hooks called by app.js ----------
 export const isCamMode = () => camMode;
-export function drag(dx, dy) { if (gyro === 'on') return; look.yawT -= dx * 0.005; look.pitchT = THREE.MathUtils.clamp(look.pitchT - dy * 0.004, -1, 0.9); }
+export function drag(dx, dy) { if (gyro === 'on') return; look.yawT -= dx * 0.005; look.pitchT = THREE.MathUtils.clamp(look.pitchT + dy * 0.004, -1, 0.9); }
 export function tap(ndc) {
   const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, D.camera); ray.camera = D.camera;
   const objs = [...charts[0].bars.flatMap(b => [b.mesh, b.label]), ...holoPanels.filter(p => !p.desk).map(p => p.mesh), detailPanel.mesh];

@@ -256,7 +256,7 @@ canvas.addEventListener('pointermove', e => { const prev = pointers.get(e.pointe
   if (pointers.size === 2) { const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinchStart) zoom = THREE.MathUtils.clamp(zoomStart * pinchStart / d, 0.5, 1.8); return; }
   if (downPos) downPos.moved += Math.abs(dx) + Math.abs(dy);
   if (level === 2) AR.drag(dx, dy);
-  if (level === 3) { look3.yawT -= dx * 0.005; look3.pitchT = THREE.MathUtils.clamp(look3.pitchT - dy * 0.004, -0.9, 0.8); } });
+  if (level === 3) { look3.yawT -= dx * 0.005; look3.pitchT = THREE.MathUtils.clamp(look3.pitchT + dy * 0.004, -0.9, 0.8); } });
 const endPointer = e => { pointers.delete(e.pointerId); if (downPos && downPos.moved < 8 && e.type === 'pointerup') tap(e); downPos = null; if (pointers.size < 2) pinchStart = 0; };
 canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('wheel', e => { e.preventDefault(); zoom = THREE.MathUtils.clamp(zoom * (1 + e.deltaY * 0.001), 0.5, 1.8); }, { passive: false });
