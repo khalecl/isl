@@ -141,7 +141,7 @@ function buildUI() {
   const ui = $('arUI');
   ui.innerHTML = `
     <div class="arTop"><button class="btn primary" id="arStart">📷 Start camera AR</button><button class="btn" id="arExit">✕ Exit AR</button><button class="btn" id="arRecenter">⟲</button>
-      <button class="btn" id="arDesk">Table AR</button><button class="btn" id="arQL">Apple viewer</button><span class="arLive"><span class="live-dot"></span>LIVE <span id="arClock"></span></span></div>
+      <button class="btn" id="arDesk">Table AR</button><button class="btn" id="arQL">Static 3D (Apple)</button><span class="arLive"><span class="live-dot"></span>LIVE <span id="arClock"></span></span></div>
     <div class="seg">${Object.entries(METRICS).map(([k, m]) => `<button data-m="${k}">${m.label}</button>`).join('')}</div>
     <div class="arHint" id="arHint"></div>
     <div class="arCard" id="arCard"></div>`;
@@ -225,13 +225,23 @@ export function exitAR() {
   videoStream?.getTracks().forEach(t => t.stop()); videoStream = null; $('camVideo').style.display = 'none';
   camMode = false; document.body.classList.remove('ar-on'); updateTop(); hint(''); holo.rotation.y = 0; D.camera.quaternion.identity(); recenter(); D.resize();
 }
+// Apple Quick Look only renders MeshStandardMaterial, so every label and panel uses it (with an emissive map so it glows).
+const qlMat = tex => new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, roughness: 1, metalness: 0, transparent: true });
+function qlPanel(id, w, h, res = [1024, 640]) { const c = document.createElement('canvas'); [c.width, c.height] = res; D.drawGlassPanel(c, id, ctxFor(PROJECTS));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.Mesh(new THREE.PlaneGeometry(w, h), qlMat(t)); }
 export async function makeUSDZ() {
   const tmp = buildChart(); const M = METRICS[metric];
-  tmp.bars.forEach(b => { b.mesh.scale.y = Math.min(1.5, M.h(b.p) * 1.4); b.mesh.material.color.set(M.c(b.p)); b.mesh.material.transparent = false; b.group?.remove(b.label); tmp.group.remove(b.label);
-    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.25), new THREE.MeshBasicMaterial({ map: valueTexture(b.p.id, M.v(b.p), M.c(b.p)), transparent: true })); lab.position.set(b.mesh.position.x, b.mesh.scale.y + 0.2, b.mesh.position.z + 0.2); tmp.group.add(lab); });
-  const c = document.createElement('canvas'); c.width = 1024; c.height = 520; D.drawGlassPanel(c, 'gauges', ctxFor(PROJECTS));
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const pnl = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.32), new THREE.MeshBasicMaterial({ map: t, transparent: true })); pnl.position.set(0, 2.35, -0.9); tmp.group.add(pnl);
+  tmp.group.children.filter(o => o.isLineSegments).forEach(o => tmp.group.remove(o));
+  tmp.bars.forEach(b => { b.mesh.scale.y = Math.min(1.5, M.h(b.p) * 1.4); b.mesh.material.color.set(M.c(b.p)); b.mesh.material.transparent = false; b.mesh.material.opacity = 1; tmp.group.remove(b.label);
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.27), qlMat(valueTexture(b.p.id, M.v(b.p), M.c(b.p))));
+    lab.position.set(b.mesh.position.x, b.mesh.scale.y + 0.2, b.mesh.position.z); tmp.group.add(lab); });
+  // a small dashboard around the model: gauges behind, KPIs left, overrun ranking right, title in front
+  const g = qlPanel('gauges', 2.6, 1.32, [1024, 520]); g.position.set(0, 2.35, -1.1); tmp.group.add(g);
+  const k = qlPanel('kpis', 2.4, 1.5); k.position.set(-2.6, 1.0, -0.3); k.rotation.y = 0.6; tmp.group.add(k);
+  const o = qlPanel('overrun', 2.4, 1.5); o.position.set(2.6, 1.0, -0.3); o.rotation.y = -0.6; tmp.group.add(o);
+  const tt = D.textTexture((gg, w, h) => { gg.fillStyle = 'rgba(10,14,40,0.9)'; D.roundRect(gg, 4, 4, w - 8, h - 8, 30); gg.fill(); gg.fillStyle = '#fff'; gg.textAlign = 'center'; gg.textBaseline = 'middle';
+    gg.font = 'bold 54px system-ui, Arial'; gg.fillText(`Atlas Projects Group · ${M.label}`, w / 2, h * 0.4); gg.font = '34px system-ui, Arial'; gg.fillStyle = '#f5a524'; gg.fillText('Practice data for training', w / 2, h * 0.75); }, 1024, 180);
+  const title = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.42), qlMat(tt)); title.position.set(0, 0.25, 1.25); title.rotation.x = -0.5; tmp.group.add(title);
   tmp.group.scale.setScalar(0.16); const holder = new THREE.Scene(); holder.add(tmp.group); holder.updateMatrixWorld(true);
   return new USDZExporter().parseAsync(holder, { quickLookCompatible: true });
 }
