@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { USDZExporter } from 'three/addons/exporters/USDZExporter.js';
+import * as AR from './ar.js';
 import { PROJECTS, BANDS, COMPANY, DATA_DATE, fmt, money, bandColor, bandLabel, tick } from './data.js';
 import { PANELS, ctxFor } from './panels.js';
 import * as C from './charts.js';
-import { initDashboard, renderAll } from './dashboard.js';
+import { initDashboard, renderAll, openProject } from './dashboard.js';
 
 const $ = id => document.getElementById(id);
 
@@ -52,105 +52,19 @@ function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w 
 new ResizeObserver(resize).observe(stage);
 function addLights(scene) { scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 1.6); d.position.set(2, 4, 3); scene.add(d); }
 
-// ============ LEVEL 2: AR on the desk ============
-function buildChart() {
-  const group = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.05, 2.0), new THREE.MeshStandardMaterial({ color: 0x232a52, roughness: 0.9 }));
-  base.position.y = -0.025; group.add(base);
-  const bars = [];
-  PROJECTS.forEach((p, i) => {
-    const col = i % 4, row = Math.floor(i / 4), x = -0.9 + col * 0.6, z = -0.6 + row * 0.6;
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1, 0.34), new THREE.MeshStandardMaterial({ color: bandColor(p.band), roughness: 0.5 }));
-    mesh.geometry.translate(0, 0.5, 0); mesh.position.set(x, 0, z); mesh.scale.y = 0.01; mesh.userData.project = p; group.add(mesh);
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), new THREE.MeshBasicMaterial({ map: labelTexture(p.id), transparent: true }));
-    label.position.set(x, 0.1, z + 0.18); group.add(label);
-    bars.push({ p, mesh, label, h: 0.01, targetH: 0.01 });
-  });
-  return { group, bars };
-}
-const maxBac = Math.max(...PROJECTS.map(p => p.bac)), maxOver = Math.max(...PROJECTS.map(p => p.overrun));
-function setChartMode(chart, height) { chart.bars.forEach(b => { b.targetH = height === 'overrun' ? Math.max(0.02, b.p.overrun / maxOver * 1.4) : b.p.bac / maxBac * 1.4;
-  b.mesh.material.color.set(height === 'overrun' && b.p.overrun <= 0 ? bandColor('ok') : bandColor(b.p.band)); }); }
-function animateChart(chart, k) { chart.bars.forEach(b => { b.h += (b.targetH - b.h) * k; b.mesh.scale.y = b.h; b.label.position.y = b.h + 0.1; }); }
-
-const s2 = new THREE.Scene(); addLights(s2);
-const chart2 = buildChart(), AR_SCALE = 0.16;
-chart2.group.scale.setScalar(AR_SCALE); s2.add(chart2.group);
-// floating live gauge panel above the model
-const gaugeCanvas = document.createElement('canvas'); gaugeCanvas.width = 1024; gaugeCanvas.height = 520;
-const gaugeTex = new THREE.CanvasTexture(gaugeCanvas); gaugeTex.colorSpace = THREE.SRGBColorSpace;
-const gaugePanel = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.32), new THREE.MeshBasicMaterial({ map: gaugeTex, transparent: true, side: THREE.DoubleSide }));
-gaugePanel.position.set(0, 2.35, -0.9); chart2.group.add(gaugePanel);
-function drawGaugePanel() { drawGlassPanel(gaugeCanvas, 'gauges', ctxFor(PROJECTS)); gaugeTex.needsUpdate = true; }
-drawGaugePanel();
-const s2floor = new THREE.Mesh(new THREE.CircleGeometry(3, 48), new THREE.MeshStandardMaterial({ color: 0x161a3a }));
-s2floor.rotation.x = -Math.PI / 2; s2floor.position.y = -0.01;
-const s2grid = new THREE.GridHelper(6, 24, 0x2c3a6f, 0x1f2550); s2.add(s2floor, s2grid);
+// ============ LEVEL 2: augmented reality (see ar.js) ============
 const reticle = new THREE.Mesh(new THREE.RingGeometry(0.06, 0.08, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-reticle.matrixAutoUpdate = false; reticle.visible = false; s2.add(reticle);
-let arMode = 'budget', arPlaced = false, hitSource = null, s2Spin = 0;
-setChartMode(chart2, 'budget');
-
+reticle.matrixAutoUpdate = false; reticle.visible = false;
+AR.initAR({ renderer, camera, textTexture, roundRect, drawGlassPanel, reticle, resize: () => resize(), getZoom: () => zoom,
+  openFull: id => { setLevel(1); setTimeout(() => openProject(id), 60); } });
+AR.s2.add(reticle);
 const supportsQuickLook = (() => { const a = document.createElement('a'); return !!(a.relList && a.relList.supports && a.relList.supports('ar')); })();
 let supportsAR = false, supportsVR = false;
 if (navigator.xr) {
   navigator.xr.isSessionSupported('immersive-ar').then(v => { supportsAR = v; if (level === 2) renderLevel2(); }).catch(() => {});
   navigator.xr.isSessionSupported('immersive-vr').then(v => { supportsVR = v; if (level === 3) renderLevel3(); }).catch(() => {});
 }
-const level2Text = () => arMode === 'budget'
-  ? 'Bar height = budget, colour = cost health. The live gauge panel floats above the model. Walk around it: which at-risk projects hide behind bigger bars?'
-  : `Bar height = forecast overrun. P02, P01 and P08 stand out. Compare the side view with the view from above: which is easier to read?`;
-function renderLevel2() {
-  $('stepTitle').textContent = 'Level 2 · Augmented reality: the portfolio on your desk';
-  let main;
-  if (supportsAR) main = `<button class="btn primary" id="startAR">Start AR</button>`;
-  else if (supportsQuickLook) main = `<button class="btn primary" id="quickLook">View on my desk (AR)</button>`;
-  else main = `<span class="muted small">Live AR needs Android Chrome; iPhone/iPad Safari opens Apple's AR viewer. The 3D preview works here.</span>`;
-  $('stepText').textContent = level2Text() + (supportsQuickLook && !supportsAR ? ' (iPhone shows a fixed copy of the model.)' : '');
-  $('controls').innerHTML = `<button class="btn ${arMode === 'budget' ? 'primary' : ''}" id="m1">Budget</button><button class="btn ${arMode === 'overrun' ? 'primary' : ''}" id="m2">Overrun</button>${main}`;
-  $('m1').onclick = () => { arMode = 'budget'; setArMode(); renderLevel2(); };
-  $('m2').onclick = () => { arMode = 'overrun'; setArMode(); renderLevel2(); };
-  if ($('startAR')) $('startAR').onclick = startAR;
-  if ($('quickLook')) $('quickLook').onclick = openQuickLook;
-}
-function setArMode() { setChartMode(chart2, arMode); $('arBudget').classList.toggle('on', arMode === 'budget'); $('arOverrun').classList.toggle('on', arMode === 'overrun'); if (arPlaced) $('arTop').textContent = level2Text(); }
-async function startAR() {
-  try {
-    const session = await navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['hit-test'], optionalFeatures: ['dom-overlay'], domOverlay: { root: $('arOverlay') } });
-    renderer.xr.setReferenceSpaceType('local'); await renderer.xr.setSession(session);
-    xrKind = 'ar'; arPlaced = false; chart2.group.visible = false; s2floor.visible = false; s2grid.visible = false; chart2.group.rotation.y = 0;
-    $('arOverlay').style.display = 'block'; $('arTop').textContent = 'Move your phone slowly over a flat surface. When the blue ring appears, tap to place the portfolio.';
-    hitSource = await session.requestHitTestSource({ space: await session.requestReferenceSpace('viewer') });
-    session.addEventListener('select', () => { if (!reticle.visible) return;
-      chart2.group.position.setFromMatrixPosition(reticle.matrix);
-      const cam = new THREE.Vector3().setFromMatrixPosition(renderer.xr.getCamera().matrixWorld);
-      chart2.group.rotation.y = Math.atan2(cam.x - chart2.group.position.x, cam.z - chart2.group.position.z);
-      chart2.group.visible = true; arPlaced = true; $('arTop').textContent = level2Text() + ' Tap another spot to move it.'; });
-    session.addEventListener('end', () => { hitSource = null; xrKind = null; reticle.visible = false; $('arOverlay').style.display = 'none';
-      chart2.group.position.set(0, 0, 0); chart2.group.visible = true; s2floor.visible = true; s2grid.visible = true; resize(); });
-  } catch (e) { $('stepText').textContent = 'Could not start AR on this device. ' + (e?.message || ''); }
-}
-['arBudget', 'arOverrun', 'arExit'].forEach(id => $(id).addEventListener('beforexrselect', e => e.preventDefault()));
-$('arBudget').onclick = () => { arMode = 'budget'; setArMode(); };
-$('arOverrun').onclick = () => { arMode = 'overrun'; setArMode(); };
-$('arExit').onclick = () => renderer.xr.getSession()?.end();
-async function makeUSDZ() {
-  const tmp = buildChart(); setChartMode(tmp, arMode); animateChart(tmp, 1);
-  const c = document.createElement('canvas'); c.width = 1024; c.height = 520; drawGlassPanel(c, 'gauges', ctxFor(PROJECTS));
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const pnl = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.32), new THREE.MeshBasicMaterial({ map: t, transparent: true })); pnl.position.set(0, 2.35, -0.9); tmp.group.add(pnl);
-  tmp.group.scale.setScalar(AR_SCALE);
-  const holder = new THREE.Scene(); holder.add(tmp.group); holder.updateMatrixWorld(true);
-  return new USDZExporter().parseAsync(holder, { quickLookCompatible: true });
-}
-async function openQuickLook() {
-  const btn = $('quickLook'); btn.disabled = true; btn.textContent = 'Preparing model…';
-  try { const data = await makeUSDZ(), url = URL.createObjectURL(new Blob([data], { type: 'model/vnd.usdz+zip' }));
-    const a = document.createElement('a'); a.rel = 'ar'; a.href = url + '#allowsContentScaling=1'; a.download = `atlas-portfolio-${arMode}.usdz`;
-    a.appendChild(document.createElement('img')); document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 1000);
-  } catch (e) { $('stepText').textContent = 'Could not prepare the AR model: ' + (e?.message || e); }
-  btn.disabled = false; btn.textContent = 'View on my desk (AR)';
-}
+const renderLevel2 = () => AR.renderLevel2(supportsAR, supportsQuickLook);
 
 // ============ LEVEL 3: immersive wall + sorting activity ============
 const s3 = new THREE.Scene(); s3.background = new THREE.Color(0x070a1c); s3.fog = new THREE.Fog(0x070a1c, 6, 14); addLights(s3);
@@ -177,7 +91,7 @@ const wallPanels = WALL_IDS.map((id, i) => {
 let wallCtx = ctxFor(PROJECTS), focused = null;
 function redrawWall(only) { wallCtx = ctxFor(PROJECTS); wallPanels.forEach(p => { if (only && p.id !== only) return; drawGlassPanel(p.canvas, p.id, wallCtx); p.tex.needsUpdate = true; }); }
 redrawWall();
-setInterval(() => { if (level === 3) redrawWall('clock'); if (level === 2) drawGaugePanel(); }, 1000);
+setInterval(() => { if (level === 3) redrawWall('clock'); if (level === 2) AR.onSecond(); }, 1000);
 function focusPanel(p) {
   if (focused && focused !== p) { focused.target = focused.home.clone(); focused.targetScale = 1; }
   if (focused === p) { p.target = p.home.clone(); p.targetScale = 1; focused = null; setL3Text(); return; }
@@ -313,22 +227,24 @@ const look3 = { yaw: 0, pitch: 0.02, yawT: 0, pitchT: 0.02 };
 // ============ level switching, input, render loop ============
 let level = 1, xrKind = null, zoom = 1;
 function setLevel(n) {
+  if (level === 2 && n !== 2) AR.exitAR();
   level = n;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', +b.dataset.level === n));
   $('dash').style.display = n === 1 ? 'block' : 'none';
   $('stage').style.display = n === 2 || n === 3 ? 'block' : 'none';
+  $('stage').classList.toggle('l2', n === 2);
   $('about').style.display = n === 0 ? 'block' : 'none';
   if (n !== 1) { $('storyBar').style.display = 'none'; $('tip').style.display = 'none'; }
-  const hints = { 2: 'Drag to turn the model · pinch to zoom', 3: 'Drag to look around · tap a panel' };
+  const hints = { 2: 'Drag to look around · tap bars and panels', 3: 'Drag to look around · tap a panel' };
   $('hint').textContent = hints[n] || '';
   zoom = 1;
   if (n === 1) requestAnimationFrame(() => renderAll());
-  if (n === 2) { drawGaugePanel(); renderLevel2(); }
+  if (n === 2) renderLevel2();
   if (n === 3) { redrawWall(); renderLevel3(); if (l3mode === 'wall') { look3.pitchT = portrait() ? -0.16 : 0.02; } }
   resize();
 }
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLevel(+b.dataset.level); });
-import('./data.js').then(D => D.onTick(() => { if (level === 3) redrawWall(); if (level === 2) drawGaugePanel(); }));
+import('./data.js').then(D => D.onTick(() => { if (level === 3) redrawWall(); if (level === 2) AR.onTick(); }));
 
 const pointers = new Map(); let downPos = null, pinchStart = 0, zoomStart = 1;
 const canvas = renderer.domElement;
@@ -339,31 +255,24 @@ canvas.addEventListener('pointermove', e => { const prev = pointers.get(e.pointe
   const dx = e.clientX - prev.x, dy = e.clientY - prev.y; pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pointers.size === 2) { const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinchStart) zoom = THREE.MathUtils.clamp(zoomStart * pinchStart / d, 0.5, 1.8); return; }
   if (downPos) downPos.moved += Math.abs(dx) + Math.abs(dy);
-  if (level === 2) s2Spin += dx * 0.01;
+  if (level === 2) AR.drag(dx, dy);
   if (level === 3) { look3.yawT -= dx * 0.005; look3.pitchT = THREE.MathUtils.clamp(look3.pitchT - dy * 0.004, -0.9, 0.8); } });
 const endPointer = e => { pointers.delete(e.pointerId); if (downPos && downPos.moved < 8 && e.type === 'pointerup') tap(e); downPos = null; if (pointers.size < 2) pinchStart = 0; };
 canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('wheel', e => { e.preventDefault(); zoom = THREE.MathUtils.clamp(zoom * (1 + e.deltaY * 0.001), 0.5, 1.8); }, { passive: false });
 const screenRay = new THREE.Raycaster(), ndc = new THREE.Vector2();
-function tap(e) { if (level !== 3) return; const r = canvas.getBoundingClientRect();
-  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); screenRay.setFromCamera(ndc, camera);
+function tap(e) { if (level !== 3 && level !== 2) return; const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  if (level === 2) return AR.tap(ndc);
+  screenRay.setFromCamera(ndc, camera);
   const hit = screenRay.intersectObjects(pickables3(), false)[0]; if (hit) pick3(hit.object); }
 
 const clock3 = new THREE.Clock();
 renderer.setAnimationLoop((t, frame) => {
   const dt = Math.min(clock3.getDelta(), 0.1), k = 1 - Math.pow(0.001, dt);
-  if (xrKind === 'ar') {
-    if (frame && hitSource) { const res = frame.getHitTestResults(hitSource);
-      if (res.length) { reticle.visible = true; reticle.matrix.fromArray(res[0].getPose(renderer.xr.getReferenceSpace()).transform.matrix); } else reticle.visible = false; }
-    animateChart(chart2, k); renderer.render(s2, camera); return;
-  }
   if (xrKind === 'vr') { animate3(k); renderer.render(s3, camera); return; }
-  if (level === 2) {
-    animateChart(chart2, k); chart2.group.rotation.y += (s2Spin - chart2.group.rotation.y) * k;
-    gaugePanel.lookAt(camera.position);
-    camera.fov = 50; camera.updateProjectionMatrix();
-    camera.position.set(0, 0.5 * zoom, 0.95 * zoom); camera.lookAt(0, 0.16, 0); renderer.render(s2, camera);
-  } else if (level === 3) {
+  if (level === 2) { AR.render(k, frame); return; }
+  if (level === 3) {
     animate3(k);
     look3.yaw += (look3.yawT - look3.yaw) * k; look3.pitch += (look3.pitchT - look3.pitch) * k;
     camera.position.set(0, 1.6, 0); camera.rotation.set(look3.pitch, -look3.yaw, 0, 'YXZ');
@@ -399,4 +308,4 @@ $('about').innerHTML = `
 <p class="muted small">Practice data only. Not real projects, companies or figures.</p>`;
 
 setLevel(1);
-window.__lab = { makeUSDZ, pick3, cards, banners, checkGroups, setL3Mode, wallPanels };   // used by automated tests only
+window.__lab = { makeUSDZ: AR.makeUSDZ, AR, pick3, cards, banners, checkGroups, setL3Mode, wallPanels };   // used by automated tests only
