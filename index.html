@@ -35,7 +35,22 @@
   nav button b{display:block;color:var(--text);font-size:13px}
   nav button.on{border-color:var(--accent);background:rgba(56,189,248,.14);color:#cfeaff}
   main{position:relative;flex:1;min-height:0}
-  #dash{position:absolute;inset:0;overflow:auto;padding:4px 12px 90px;-webkit-overflow-scrolling:touch}
+  #dash,#twin{position:absolute;inset:0;overflow:auto;padding:4px 12px 90px;-webkit-overflow-scrolling:touch}
+  #twin{display:none}
+  .twinHint{position:absolute;left:8px;top:6px;z-index:1;font-size:11px;color:var(--muted);pointer-events:none}
+  .partCard{display:none;position:absolute;right:8px;top:8px;z-index:1;background:#0d1230ee;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px;min-width:180px}
+  .partCard i,.alarmList i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .gaugeRow{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+  .gaugeRow .g1{position:relative;height:130px}.gaugeRow canvas{position:absolute;inset:0;width:100%;height:100%}
+  .alarmList{max-height:240px;overflow:auto;font-size:12px}.alarmList div{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+  table.info{font-size:12.5px;margin-bottom:6px}table.info td,table.info th{padding:4px 6px;white-space:normal;position:static;background:none}
+  .sl{display:block;font-size:12.5px;margin:6px 0}.sl input[type=range]{width:100%;accent-color:#38bdf8}.sl b{float:right}.sl.chk input{margin-right:6px}
+  .wiOut{font-size:12.5px;margin-top:8px}.wiOut div{margin-top:4px}
+  #qrModal{display:none;position:fixed;inset:0;z-index:60;background:#000a;align-items:center;justify-content:center}
+  .qrBox{background:#151a3a;border:1px solid var(--line);border-radius:16px;padding:16px;max-width:360px;text-align:center}
+  .qrImg{background:#fff;border-radius:10px;padding:8px}.qrImg svg{width:100%;height:auto;display:block}
+  .qrBox a{word-break:break-all}
+  @media (max-width:1100px){ .gaugeRow{grid-template-columns:repeat(4,1fr)} }
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
   .chips{display:flex;gap:6px;flex-wrap:wrap}
   .chip{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--muted);border-radius:99px;padding:4px 10px;font-size:12px;cursor:pointer;user-select:none}
@@ -130,7 +145,7 @@
   .about table{width:auto;margin:6px 0}.about td,.about th{border:1px solid var(--line);padding:5px 8px;white-space:normal;position:static}
   a{color:#8cc1ff}
   @media (max-width:1100px){ .g-3{grid-column:span 6} .g-4{grid-column:span 6} .g-8{grid-column:span 12} }
-  @media (max-width:700px){ .grid{grid-template-columns:1fr} .grid>.panel{grid-column:1/-1} .kpis{grid-template-columns:repeat(2,1fr)} .kpi .v{font-size:19px}
+  @media (max-width:700px){ .gaugeRow{grid-template-columns:repeat(2,1fr)} .gaugeRow .g1{height:115px} .grid{grid-template-columns:1fr} .grid>.panel{grid-column:1/-1} .kpis{grid-template-columns:repeat(2,1fr)} .kpi .v{font-size:19px}
     .kpi .spark{width:54px;height:22px} .clock .t{font-size:17px} .dtiles{grid-template-columns:repeat(2,1fr)} .dgrid>.panel{grid-column:1/-1}
     input[type=search]{flex:1;min-width:140px} .brand .sub{display:none} header{flex-wrap:nowrap;gap:8px} .clock{gap:6px} .clock .d{display:none} .brand h1{font-size:14px}
     .live{padding:2px 6px} .badge{font-size:10px;padding:2px 6px} nav button{min-width:96px;padding:6px 9px} }
@@ -138,17 +153,19 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Immersive Story Lab <span style="font-size:10px;color:#93a4c3;font-weight:500">v5</span></h1><div class="sub">Project Portfolio Command Centre · Day 3</div></div>
+  <div class="brand"><h1>Immersive Story Lab <span style="font-size:10px;color:#93a4c3;font-weight:500">v6</span></h1><div class="sub">Project Portfolio Command Centre · Day 3</div></div>
   <div class="clock"><span class="live"><span class="live-dot"></span>LIVE</span><div><div class="t" id="clockT">--:--:--</div><div class="d" id="clockD"></div></div><span class="badge" title="All figures are invented for training">Practice data</span></div>
 </header>
 <nav id="tabs">
   <button data-level="1" class="on"><b>Level 1</b>Interactive dashboard</button>
   <button data-level="2"><b>Level 2</b>AR on your desk</button>
   <button data-level="3"><b>Level 3</b>Immersive wall</button>
+  <button data-level="4"><b>Digital twin</b>Motor & generator</button>
   <button data-level="0"><b>Guide</b>How to use</button>
 </nav>
 <main>
   <div id="dash"></div>
+  <div id="twin"></div>
   <div id="stage">
     <video id="camVideo" playsinline muted autoplay></video>
     <div class="hint" id="hint"></div>
@@ -160,6 +177,7 @@
 <div id="tip"></div>
 <aside id="drawer"><button class="btn" id="drawerClose">✕ Close</button><div id="drawerBody"></div></aside>
 <div id="storyBar"><div id="storyText"></div><button class="btn" id="storyPrev">Back</button><button class="btn primary" id="storyNext">Next</button><button class="btn" id="storyClose">✕</button></div>
+<script src="vendor/qr/qrcode.js"></script>
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>

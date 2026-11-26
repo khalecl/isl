@@ -4,6 +4,7 @@ import { PROJECTS, BANDS, COMPANY, DATA_DATE, fmt, money, bandColor, bandLabel, 
 import { PANELS, ctxFor } from './panels.js';
 import * as C from './charts.js';
 import { initDashboard, renderAll, openProject } from './dashboard.js';
+import { initTwin } from './twin.js';
 
 const $ = id => document.getElementById(id);
 
@@ -231,6 +232,8 @@ function setLevel(n) {
   level = n;
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', +b.dataset.level === n));
   $('dash').style.display = n === 1 ? 'block' : 'none';
+  $('twin').style.display = n === 4 ? 'block' : 'none';
+  if (n === 4) history.replaceState(null, '', location.pathname + location.search + '#twin');
   $('stage').style.display = n === 2 || n === 3 ? 'block' : 'none';
   $('stage').classList.toggle('l2', n === 2);
   $('about').style.display = n === 0 ? 'block' : 'none';
@@ -297,6 +300,7 @@ $('about').innerHTML = `
 <table><tr><th>Level</th><th>What you do</th><th>Works on</th></tr>
 <tr><td>1 · Interactive dashboard</td><td>KPIs, gauges, S-curves, bubble matrix, donut, risk heat map, live site feed and a sortable register. Filter by sector, region or status; hover or tap any chart; open any project for a full drill-down. Press <i>Play the data story</i> for a guided five-step narrative.</td><td>Any device</td></tr>
 <tr><td>2 · AR on your desk</td><td>Place a 3D model of the portfolio, with a live gauge panel, on a real desk and walk around it.</td><td>Android Chrome (live AR); iPhone/iPad (Apple AR viewer, fixed model)</td></tr>
+<tr><td>Digital twin</td><td>A live twin of a motor-driven pump (M-101) and a standby generator (G-201): 3D model with parts glowing on warnings, sensor gauges, 24-hour trends with limits, alarms, a what-if panel to test decisions on the twin first, and trainer fault scenarios. Each asset has a QR tag: print it, stick it on real equipment and scan it to open that asset's live status (situated data).</td><td>Any device</td></tr>
 <tr><td>3 · Immersive wall</td><td>Twelve live panels surround you; pull any panel closer. Then try the sorting activity: compute CPI and group the projects in space.</td><td>Any device (drag to look); full VR in a headset browser such as Meta Quest</td></tr></table>
 <h3>Key terms</h3>
 <table><tr><td>BAC</td><td>Budget at completion</td></tr><tr><td>PV</td><td>Planned value: budgeted cost of work scheduled to date</td></tr><tr><td>EV</td><td>Earned value: budgeted cost of work actually done (BAC × % complete)</td></tr>
@@ -307,5 +311,6 @@ $('about').innerHTML = `
 <li>On the immersive wall, did seeing all panels at once change what you noticed? What did you miss?</li><li>For your own job, which level is worth the extra effort, and for which audience?</li></ol>
 <p class="muted small">Practice data only. Not real projects, companies or figures.</p>`;
 
-setLevel(1);
+initTwin();
+setLevel(location.hash === '#twin' || new URLSearchParams(location.search).has('asset') ? 4 : 1);
 window.__lab = { makeUSDZ: AR.makeUSDZ, AR, pick3, cards, banners, checkGroups, setL3Mode, wallPanels };   // used by automated tests only
