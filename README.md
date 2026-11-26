@@ -48,3 +48,20 @@ After any edit, change `VERSION` in `sw.js` (e.g. `storylab-v2`) so installed co
 ## Technical
 
 Plain HTML + JavaScript, no build step. 3D/XR by three.js r170 (MIT licence), bundled in `vendor/` so no external downloads are needed.
+
+## Day 4 · Northfield Plant DSS (`day4-dss/`)
+
+Companion app for **Day 4 – Intelligent Decision-Making**: <https://khalecl.github.io/isl/day4-dss/>
+
+A working AI decision-support console for a fictional plant, built on the Day 4 practice workbook (2025 hourly meter, monthly summary).
+
+| Day 4 topic | Module | Trainees do |
+|---|---|---|
+| AI-Powered Decision Support Systems | Decision Center | Approve or reject AI recommendations (prediction, confidence, what the model cannot know, autonomy L1–L3); a reason is required; add their own decision (Activity 4.1-A); copy the log as a brief |
+| Leveraging AI for data-driven decision-making | AI Analyst | Classify data at the gate before use; ask the guarded assistant; each answer shows evidence, verification status and analytics level |
+| Real-time Analytics and Predictive AI | Live & Predictive | Hourly meter replay; design the alert rule (weak vs band, width, consecutive hours); inject a fault; remaining useful life; Q1 2026 forecast with adjustable band |
+| AI in Strategic Decision-making | Strategy Room | Scenario drivers with visible formulas; AI stress test of the three assumptions (Activity 4.4-A); sign a decision memo |
+| Evaluating AI Tools for Decision Support | Tool Evaluation | Eight-criterion scorecard, weighted %, security/governance veto |
+| Governance | Governance & Audit | Use-case register with EU AI Act tier (overview), owner, review date; live audit trail |
+
+> **Practice data.** Northfield Plant and all its figures are invented for training. The AI Analyst answers from the table by fixed rules; it is not a live AI model.

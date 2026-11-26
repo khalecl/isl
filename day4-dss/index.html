@@ -93,7 +93,14 @@ table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:7px 8px;b
 <div class="kpis" id="decK"></div>
 <div class="g2"><div id="decList"></div>
 <div><div class="card"><div class="ch"><h2>Autonomy policy</h2></div><table><tr><th>Error consequence</th><th>Max level</th></tr><tr><td>Low, reversible</td><td><span class="tg t-g">L3 acts, human reviews</span></td></tr><tr><td>Costly to reverse</td><td><span class="tg t-a">L2 recommends</span></td></tr><tr><td>Safety or law</td><td><span class="tg t-r">L1 shows data only</span></td></tr></table><p class="mut">Escalate to a human when model confidence falls below 70%.</p></div>
-<div class="card"><div class="ch"><h2>Decision log</h2><span class="mut">Who decided, and why</span></div><div class="log" id="decLog"><p class="mut">No decisions yet today.</p></div></div></div></div>
+<div class="card"><div class="ch"><h2>Add a decision</h2><span class="mut">Activity 4.1-A</span></div>
+<form id="nd"><p style="margin:0 0 6px"><input type="text" id="ndT" placeholder="Decision question, e.g. Approve the lighting retrofit?" aria-label="Decision question"></p>
+<p style="margin:0 0 6px"><input type="text" id="ndP" placeholder="Prediction question (data can answer)" aria-label="Prediction"></p>
+<p style="margin:0 0 6px"><input type="text" id="ndJ" placeholder="Judgment question (names costs, values or duties)" aria-label="Judgment"></p>
+<p style="margin:0 0 6px"><input type="text" id="ndD" placeholder="Input data" aria-label="Input data"></p>
+<p style="margin:0 0 6px"><input type="text" id="ndC" placeholder="What the model cannot know" aria-label="Cannot know"></p>
+<div class="row"><input type="text" id="ndO" placeholder="Human owner with authority to override" aria-label="Owner" style="flex:1"><select id="ndL" style="width:auto" aria-label="Level"><option value="L1">L1 safety/law</option><option value="L2" selected>L2 costly</option><option value="L3">L3 low risk</option></select><button class="pri">Add to queue</button></div><p class="mut" id="ndE" style="margin:6px 0 0"></p></form></div>
+<div class="card"><div class="ch"><h2>Decision log</h2><button id="copyLog" type="button">Copy as brief</button><span class="mut">Who decided, and why</span></div><div class="log" id="decLog"><p class="mut">No decisions yet today.</p></div></div></div></div>
 </section>
 
 <section id="analyst">
@@ -109,11 +116,15 @@ table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:7px 8px;b
 <section id="live">
 <div class="hd"><div><p>Hourly main-meter replay of 2025, compared with an expected profile for the same hour and weekday. An alert fires only after two consecutive hours outside the band, and goes to a named owner.</p></div>
 <div class="row"><button id="play" class="pri">Pause</button><select id="spd" aria-label="Speed" style="width:auto"><option value="1">1 h / tick</option><option value="6" selected>6 h / tick</option><option value="24">24 h / tick</option></select><button id="fault" class="warn">Inject compressor fault</button></div></div>
+<div class="card" style="margin-bottom:14px"><div class="ch"><h2>Alert rule (you design it)</h2><span class="mut" id="ruleNote"></span></div>
+<div class="g3"><p style="margin:0"><label for="rule">Trigger</label><select id="rule"><option value="avg">Weak: any hour above the annual average</option><option value="band" selected>Strong: outside the expected band</option></select></p>
+<p style="margin:0"><label for="rk">Band width: <b id="rkv">3.5</b> × σ</label><input type="range" id="rk" min="1" max="5" step="0.5" value="3.5"></p>
+<p style="margin:0"><label for="need">Fire after</label><select id="need"><option value="1">1 hour outside</option><option value="2" selected>2 consecutive hours</option><option value="3">3 consecutive hours</option></select></p></div></div>
 <div class="kpis" id="liveK"></div>
 <div class="g2"><div class="card"><div class="ch"><h2>Main meter, last 7 days (kWh per hour)</h2><span class="mut">Line: actual · shaded: expected ± 3.5σ</span></div><div class="fig"><svg id="liveSvg"></svg></div></div>
 <div><div class="card"><div class="ch"><h2>Alerts</h2><span class="mut">Owner: shift supervisor</span></div><div class="log" id="alerts"><p class="mut">No alerts.</p></div></div>
 <div class="card"><div class="ch"><h2>Compressor C-2 · remaining useful life</h2><span class="tg t-a" id="rulTag"></span></div><div class="big" id="rulV"></div><p class="mut" id="rulT"></p><div class="gauge"><i id="rulG"></i></div><p class="mut">Health index falls toward the failure threshold of 0.30. The AI predicts the crossing time; the maintenance lead decides the service date.</p></div></div></div>
-<div class="card"><div class="ch"><h2>Energy per unit forecast, Q1 2026</h2><span class="mut">Linear trend, band = ± 2 × residual SD. Assumes the trend continues.</span></div><div class="fig" style="min-height:260px"><svg id="fcSvg"></svg></div><p class="mut" id="fcTxt"></p></div>
+<div class="card"><div class="ch"><h2>Energy per unit forecast, Q1 2026</h2><span class="mut">Linear trend, band = ± 2 × residual SD. Assumes the trend continues.</span></div><p style="max-width:420px"><label for="fk">Forecast band: ± <b id="fkv">2</b> × residual SD</label><input type="range" id="fk" min="0" max="3" step="0.5" value="2"></p><div class="fig" style="min-height:260px"><svg id="fcSvg"></svg></div><p class="mut" id="fcTxt"></p></div>
 </section>
 
 <section id="strategy">
@@ -122,6 +133,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:7px 8px;b
 <div class="ch"><h2>Scenario drivers</h2><button id="reset">Reset to base</button></div>
 <div id="drv"></div></div>
 <div class="card"><div class="ch"><h2>Projected 2026</h2><span class="tg t-b" id="scName">Base</span></div><div id="proj"></div><div class="row" style="margin-top:12px"><input type="text" id="scN" placeholder="Scenario name" style="flex:1" aria-label="Scenario name"><button class="pri" id="save">Save scenario</button></div></div></div>
+<div class="card"><div class="ch"><h2>AI stress test of assumptions</h2><button class="pri" id="stress" type="button">Run stress test</button></div><p class="mut">Assumptions behind the plan: the efficiency trend continues; output stays between 4,300 and 5,200 units a month; the meter method is unchanged.</p><div id="stressOut"></div></div>
 <div class="card"><div class="ch"><h2>Scenario comparison</h2><span class="mut">The AI generates and compares; the accountable person chooses.</span></div><div class="scroll"><table id="cmp"></table></div>
 <div class="row" style="margin-top:12px"><select id="pick" style="width:auto;flex:1" aria-label="Chosen scenario"></select><input type="text" id="why" placeholder="Reason for the choice" style="flex:2" aria-label="Reason"><button class="pri" id="sign">Sign decision memo</button></div><p class="mut" id="signed"></p></div>
 </section>
@@ -172,6 +184,11 @@ $('decList').innerHTML=DEC.map(d=>{const s=DS[d.id];const esc1=d.conf===null||d.
 '<div><b style="font-size:13px">Judgment (owner: '+d.owner+')</b>'+d.opts.map((o,j)=>'<label class="opt"><input type="radio" name="o'+d.id+'" value="'+j+'"><span>'+o+(d.rec===j?' <span class="tg t-b">AI recommends</span>':'')+'</span></label>').join('')+
 '<textarea id="w'+d.id+'" rows="2" placeholder="Reason (required, goes to the audit trail)" style="margin-top:8px"></textarea><div class="row" style="margin-top:8px"><button class="pri" data-ok="'+d.id+'">Approve choice</button><button data-no="'+d.id+'">Reject AI recommendation</button><span class="mut" id="e'+d.id+'"></span></div></div>')+'</div>';}).join('');
 const L=DEC.filter(d=>DS[d.id]).map(d=>'<div style="padding:6px 0;border-bottom:1px solid var(--ln)"><b>'+d.id+'</b> '+esc(DS[d.id].choice)+'<br><span class="mut">'+d.owner+' · '+esc(DS[d.id].why)+'</span></div>');$('decLog').innerHTML=L.join('')||'<p class="mut">No decisions yet today.</p>';}
+$('nd').onsubmit=e=>{e.preventDefault();const g=id=>$(id).value.trim();const v=['ndT','ndP','ndJ','ndD','ndC','ndO'].map(g);if(v.some(x=>!x)){$('ndE').textContent='Fill every field. A decision without an owner is not controlled.';return;}
+if(v[1].toLowerCase()===v[2].toLowerCase()){$('ndE').textContent='The judgment question repeats the prediction. Name the costs, duties or values.';return;}
+const L=$('ndL').value,id='D-'+(122+DEC.length-4);DEC.unshift({id,t:esc(v[0]),lvl:L,tag:L==='L1'?'t-r':L==='L2'?'t-a':'t-g',risk:L==='L1'?'Safety: AI shows data only':L==='L2'?'Costly to reverse':'Low, reversible',pred:esc(v[1]),conf:L==='L1'?null:65,data:esc(v[3]),cannot:esc(v[4]),opts:['Approve: '+esc(v[2]),'Hold and collect more data'],rec:null,owner:esc(v[5])});
+$('nd').reset();$('ndE').textContent='Added '+id+'. No validated confidence yet, so it is escalated to a human.';audit('Trainee added '+id);renderDec();};
+$('copyLog').onclick=async()=>{const txt=DEC.filter(d=>DS[d.id]).map(d=>d.id+' | '+d.t.replace(/<[^>]+>/g,'')+' | Decision: '+DS[d.id].choice+' | Owner: '+d.owner+' | Reason: '+DS[d.id].why).join('\n')||'No decisions yet.';try{await navigator.clipboard.writeText('Decision brief, Northfield Plant (practice data)\n'+txt);$('copyLog').textContent='Copied';}catch(_){$('copyLog').textContent='Copy blocked';}setTimeout(()=>$('copyLog').textContent='Copy as brief',1500);};
 $('decList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.ok||b.dataset.no;if(!id)return;const d=DEC.find(x=>x.id===id);const r=document.querySelector('input[name="o'+id+'"]:checked');const w=$('w'+id).value.trim();
 if(b.dataset.ok&&!r){$('e'+id).textContent='Choose an option first.';return;}if(!w){$('e'+id).textContent='A reason is required. Rubber-stamping is not a decision.';return;}
 const choice=b.dataset.no?'Rejected AI recommendation':d.opts[+r.value];DS[id]={ok:!!b.dataset.ok,choice,why:w};audit(id+' · '+esc(choice)+' · by '+d.owner);renderDec();});
@@ -199,36 +216,40 @@ $('ask').onsubmit=e=>{e.preventDefault();const v=$('q').value.trim();if(v){answe
 say('ai','Hello. I work only from the 2025 monthly table on the right. Pick a question below or type your own.');
 /* ---------- live ---------- */
 const prof={},cnt={};HR.forEach((v,i)=>{const k=((i/24|0)+2)%7*24+i%24;prof[k]=(prof[k]||0)+v;cnt[k]=(cnt[k]||0)+1});for(const k in prof)prof[k]/=cnt[k];
-const exp=i=>prof[((i/24|0)+2)%7*24+i%24];const res=HR.map((v,i)=>v-exp(i)),SD=Math.sqrt(sum(res.map(r=>r*r))/(res.length-1)),K=3.5;
+const exp=i=>prof[((i/24|0)+2)%7*24+i%24];const res=HR.map((v,i)=>v-exp(i)),SD=Math.sqrt(sum(res.map(r=>r*r))/(res.length-1)),AVG=sum(HR)/HR.length;let K=3.5,RULE='band',NEED=2,fired=0;
 let t=24*30,run=true,faultAt=-1,out=0,alerts=[];
 const val=i=>HR[i]+(faultAt>=0&&i>=faultAt&&i<faultAt+8?220:0);
 const ts=i=>{const d=new Date(Date.UTC(2025,0,1)+i*3600e3);return d.toISOString().slice(5,10).replace('-','/')+' '+d.toISOString().slice(11,13)+':00';};
-function tick(){const st=+$('spd').value;for(let s=0;s<st&&t<HR.length-1;s++){t++;const o=Math.abs(val(t)-exp(t))>K*SD;out=o?out+1:0;if(out===2){alerts.unshift({i:t,v:val(t),e:exp(t)});$('navA').hidden=false;audit('Alert '+ts(t)+' sent to shift supervisor');}}
+function tick(){const st=+$('spd').value;for(let s=0;s<st&&t<HR.length-1;s++){t++;const o=RULE==='avg'?val(t)>AVG:Math.abs(val(t)-exp(t))>K*SD;out=o?out+1:0;if(out===NEED){fired++;alerts.unshift({i:t,v:val(t),e:RULE==='avg'?AVG:exp(t)});if(alerts.length>40)alerts.pop();$('navA').hidden=false;audit('Alert '+ts(t)+' sent to shift supervisor');}}
 $('clock').textContent='Replay '+ts(t);if(location.hash==='#live')drawLive();}
 setInterval(()=>{if(run)tick()},700);
+function ruleUI(){RULE=$('rule').value;K=+$('rk').value;NEED=+$('need').value;$('rkv').textContent=K;$('rk').disabled=RULE==='avg';alerts=[];fired=0;out=0;
+$('ruleNote').textContent=RULE==='avg'?'Every working shift is above average: expect alarm fatigue.':K<2.5?'Narrow band: many false alarms.':K>4?'Wide band: a real fault may pass unseen.':'Balanced: rare alerts, each with an owner and a first action.';audit('Alert rule changed: '+(RULE==='avg'?'above average':'band ±'+K+'σ')+', after '+NEED+' h');drawLive();}
+['rule','rk','need'].forEach(id=>$(id).addEventListener('input',ruleUI));
 $('play').onclick=()=>{run=!run;$('play').textContent=run?'Pause':'Play'};
 $('fault').onclick=()=>{faultAt=t+1;audit('Trainer injected compressor fault at '+ts(t+1));};
-let hl=1200;
+let hl=1200;$('fk').addEventListener('input',e=>{FK=+e.target.value;drawFc();});
 function drawLive(){const day=HR.slice(Math.max(0,t-23),t+1).map((v,j)=>val(t-23+j));
-$('liveK').innerHTML=[['Current hour',f(val(t),0)+' kWh'],['Expected',f(exp(t),0)+' kWh'],['Last 24 h',f(sum(day),0)+' kWh'],['Alerts this replay',alerts.length]].map(k=>'<div class="kpi"><div class="l">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>').join('');
-$('alerts').innerHTML=alerts.length?alerts.map(a=>'<div style="padding:7px 0;border-bottom:1px solid var(--ln)"><span class="tg t-r">2 h outside band</span> <b>'+ts(a.i)+'</b><br>Main meter '+f(a.v)+' kWh vs expected '+f(a.e)+'. <span class="mut">First action: check compressor C-2 load; review in 1 h.</span></div>').join(''):'<p class="mut">No alerts. Try "Inject compressor fault".</p>';
+$('liveK').innerHTML=[['Current hour',f(val(t),0)+' kWh'],['Expected',f(exp(t),0)+' kWh'],['Last 24 h',f(sum(day),0)+' kWh'],['Alerts this replay',fired]].map(k=>'<div class="kpi"><div class="l">'+k[0]+'</div><div class="v">'+k[1]+'</div></div>').join('');
+$('alerts').innerHTML=alerts.length?alerts.map(a=>'<div style="padding:7px 0;border-bottom:1px solid var(--ln)"><span class="tg t-r">'+(RULE==='avg'?'Above average':NEED+' h outside band')+'</span> <b>'+ts(a.i)+'</b><br>Main meter '+f(a.v)+' kWh vs expected '+f(a.e)+'. <span class="mut">First action: check compressor C-2 load; review in 1 h.</span></div>').join(''):'<p class="mut">No alerts. Try "Inject compressor fault".</p>';
 const sv=$('liveSvg'),W=sv.clientWidth,H=sv.clientHeight;if(!W)return;const n=168,s0=Math.max(0,t-n+1),L=46,Rr=10,Tt=10,B=24;const pts=[];for(let i=s0;i<=t;i++)pts.push(i);
 let mn=Infinity,mx=-Infinity;pts.forEach(i=>{mn=Math.min(mn,val(i),exp(i)-K*SD);mx=Math.max(mx,val(i),exp(i)+K*SD)});
 const X=i=>L+(i-s0)/(n-1)*(W-L-Rr),Y=v=>Tt+(mx-v)/(mx-mn)*(H-Tt-B);let g='';
 for(let j=0;j<=4;j++){const v=mn+(mx-mn)*j/4;g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--ln)"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+f(v)+'</text>';}
 for(let i=s0;i<=t;i++)if(i%24===0)g+='<text x="'+X(i)+'" y="'+(H-6)+'" font-size="11" fill="var(--mut)">'+ts(i).slice(0,5)+'</text>';
-g+='<path d="M'+pts.map(i=>X(i)+','+Y(exp(i)+K*SD)).join('L')+'L'+pts.slice().reverse().map(i=>X(i)+','+Y(exp(i)-K*SD)).join('L')+'Z" fill="var(--bl)" opacity=".16"/>';
+if(RULE==='avg')g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(AVG)+'" y2="'+Y(AVG)+'" stroke="var(--cor)" stroke-dasharray="5 4"/>';else g+='<path d="M'+pts.map(i=>X(i)+','+Y(exp(i)+K*SD)).join('L')+'L'+pts.slice().reverse().map(i=>X(i)+','+Y(exp(i)-K*SD)).join('L')+'Z" fill="var(--bl)" opacity=".16"/>';
 g+='<path d="M'+pts.map(i=>X(i)+','+Y(val(i))).join('L')+'" fill="none" stroke-width="2" style="stroke:light-dark(#00463c,#c9ef7a)"/>';
 alerts.filter(a=>a.i>=s0).forEach(a=>g+='<circle cx="'+X(a.i)+'" cy="'+Y(a.v)+'" r="5" fill="var(--cor)"/>');sv.innerHTML=g;
 hl=1200+((t/24|0)%40)*5;const hi=Math.max(.3,1-(hl/1650)*.7),rul=Math.max(0,1650-hl);$('rulV').textContent=f(rul)+' h';$('rulT').textContent='Run hours '+f(hl)+' · health index '+hi.toFixed(2)+' · predicted threshold crossing at about 1,650 h';$('rulG').style.width=(hi*100)+'%';$('rulG').style.background=rul<300?'var(--cor)':'var(--amb)';$('rulTag').textContent=rul<300?'Plan service now':'Plan service';}
-function drawFc(){const sv=$('fcSvg'),W=sv.clientWidth,H=sv.clientHeight;if(!W)return;const L=46,Rr=10,Tt=10,B=24,mn=62,mx=76,N=15,X=i=>L+(i-1)/(N-1)*(W-L-Rr),Y=v=>Tt+(mx-v)/(mx-mn)*(H-Tt-B);let g='';
+let FK=2;function band(){return[13,14,15].map(m=>({c:R.a+R.b*m,lo:R.a+R.b*m-FK*R.s,hi:R.a+R.b*m+FK*R.s}));}
+function drawFc(){const FC=band();$('fkv').textContent=FK;const sv=$('fcSvg'),W=sv.clientWidth,H=sv.clientHeight;if(!W)return;const L=46,Rr=10,Tt=10,B=24,mn=62,mx=76,N=15,X=i=>L+(i-1)/(N-1)*(W-L-Rr),Y=v=>Tt+(mx-v)/(mx-mn)*(H-Tt-B);let g='';
 for(let v=62;v<=76;v+=2)g+='<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--ln)"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" font-size="11" text-anchor="end" fill="var(--mut)">'+v+'</text>';
 for(let i=1;i<=N;i+=W<520?2:1)g+='<text x="'+X(i)+'" y="'+(H-6)+'" font-size="11" text-anchor="middle" fill="var(--mut)">'+M[(i-1)%12]+'</text>';
 g+='<path d="M'+X(12)+','+Y(EPU[11])+FC.map((p,j)=>'L'+X(13+j)+','+Y(p.hi)).join('')+FC.slice().reverse().map((p,j)=>'L'+X(15-j)+','+Y(p.lo)).join('')+'Z" fill="var(--bl)" opacity=".18"/>';
 g+='<path d="M'+EPU.map((v,i)=>X(i+1)+','+Y(v)).join('L')+'" fill="none" stroke-width="2.5" style="stroke:light-dark(#00463c,#c9ef7a)"/>';
 g+='<path d="M'+X(12)+','+Y(EPU[11])+FC.map((p,j)=>'L'+X(13+j)+','+Y(p.c)).join('')+'" fill="none" stroke="var(--bl)" stroke-width="2.5" stroke-dasharray="6 5"/>';
 g+='<text x="'+(X(13)-4)+'" y="'+(Tt+12)+'" font-size="11" fill="var(--mut)">FORECAST</text>';sv.innerHTML=g;
-$('fcTxt').textContent='Likely range: Jan '+f(FC[0].lo,1)+'–'+f(FC[0].hi,1)+', Feb '+f(FC[1].lo,1)+'–'+f(FC[1].hi,1)+', Mar '+f(FC[2].lo,1)+'–'+f(FC[2].hi,1)+' kWh per unit. Slope '+f(R.b,2)+' per month.';}
+$('fcTxt').textContent=FK===0?'No band: a single line reads as a promise, and readers will treat it as fact. Always show the range.':'Likely range: Jan '+f(FC[0].lo,1)+'–'+f(FC[0].hi,1)+', Feb '+f(FC[1].lo,1)+'–'+f(FC[1].hi,1)+', Mar '+f(FC[2].lo,1)+'–'+f(FC[2].hi,1)+' kWh per unit. Slope '+f(R.b,2)+' per month.';}
 /* ---------- strategy ---------- */
 const D0={out:0,trend:1,mix:0,price:0.10,maint:0};
 const DRV=[['out','Output change vs 2025','%',-20,20,1],['trend','Efficiency trend continues (1 = yes, 0 = flat)','',0,1,1],['mix','Shift to heavier products (energy per unit)','%',0,15,1],['price','Electricity price (assumption, USD per kWh)','',0.05,0.25,0.01],['maint','Downtime cut in peak months by moving maintenance','%',0,50,5]];
@@ -242,6 +263,9 @@ $('reset').onclick=()=>{S={...D0};proj();};
 function renderCmp(){const rows=[['Base (2025 trend)',D0]].concat(SAVED);$('cmp').innerHTML='<tr><th>Scenario</th><th class="n">Units</th><th class="n">kWh/unit</th><th class="n">Energy cost</th><th class="n">Downtime h</th></tr>'+rows.map(r=>{const c=calc(r[1]);return '<tr><td>'+esc(r[0])+'</td><td class="n">'+f(c.units)+'</td><td class="n">'+f(c.epu,2)+'</td><td class="n">$'+f(c.cost/1e3)+'k</td><td class="n">'+f(c.down)+'</td></tr>'}).join('');$('pick').innerHTML=rows.map(r=>'<option>'+esc(r[0])+'</option>').join('');}
 $('save').onclick=()=>{const n=$('scN').value.trim()||'Scenario '+(SAVED.length+1);SAVED.push([n,{...S}]);$('scN').value='';renderCmp();audit('Scenario saved: '+esc(n));};
 $('sign').onclick=()=>{const w=$('why').value.trim();if(!w){$('signed').textContent='Add the reason before signing. The AI drafts; the accountable person signs.';return;}$('signed').innerHTML='<b>Signed</b> by Plant Manager: '+esc($('pick').value)+' · '+esc(w)+' · review date in 90 days.';audit('Strategy decision signed: '+esc($('pick').value));};
+const ST=[['Product mix shifts to heavier products',1,'Internal','Could reverse the downward trend','Product mix by month',{...D0,mix:10}],['Meter recalibrated mid-year',3,'Internal','Breaks the series; the trend may look like a sudden shift','Calibration records',null],['Demand drops below 4,000 units a month for a quarter',2,'Internal','Monthly energy per unit becomes less stable','Production plan and sales orders',{...D0,out:-15}]];
+$('stress').onclick=()=>{$('stressOut').innerHTML='<div class="scroll"><table><thead><tr><th>Scenario (AI hypothesis)</th><th>Tests</th><th>Driver</th><th>Effect</th><th>Data needed</th><th></th></tr></thead><tbody>'+ST.map((x,i)=>'<tr><td>'+x[0]+'</td><td>Assumption '+x[1]+'</td><td>'+x[2]+'</td><td>'+x[3]+'</td><td>'+x[4]+'</td><td>'+(x[5]?'<button data-st="'+i+'" type="button">Load</button>':'<span class="mut">Cannot be modelled: check records</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="box" style="margin-top:8px"><b>Remember</b>These scenarios are hypotheses to test, not facts. The most damaging is the meter recalibration: it can fake a trend or hide one.</p>';audit('AI stress test run');};
+$('stressOut').addEventListener('click',e=>{const b=e.target.closest('button[data-st]');if(!b)return;const x=ST[b.dataset.st];S={...x[5]};proj();$('scN').value=x[0];});
 renderCmp();
 /* ---------- evaluate ---------- */
 const CR=[['Accuracy and validation',15],['Explainability',15],['Data security and privacy',15],['Integration',10],['Total cost',10],['Licensing and capacity',10],['Lock-in and portability',10],['Governance and audit',15]];
