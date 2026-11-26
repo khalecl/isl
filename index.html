@@ -144,6 +144,40 @@
   .about p,.about li{color:#cdd6e2;max-width:760px}
   .about table{width:auto;margin:6px 0}.about td,.about th{border:1px solid var(--line);padding:5px 8px;white-space:normal;position:static}
   a{color:#8cc1ff}
+  #themeBtn{padding:5px 9px}
+  #themePop{display:none;position:fixed;z-index:70;top:62px;right:12px;width:min(340px,calc(100% - 24px));background:#141936f5;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 16px 40px #000a;font-size:13px}
+  #themePop.open{display:block}
+  .tlab{margin:10px 0 4px;color:var(--muted);font-size:12px}
+  .tseg{display:flex;flex-wrap:wrap;gap:5px}
+  .tseg button{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer}
+  .tseg button.on{border-color:var(--accent);background:rgba(56,189,248,.2)}
+  .tseg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:2px;vertical-align:-1px}
+  /* ---------- light theme ---------- */
+  body.light{--text:#0f1a33;--muted:#55627d;--line:rgba(15,26,51,.14);--accent:#2563eb;color:var(--text);
+    background:radial-gradient(1100px 600px at 10% -10%,#dfe4ff 0%,transparent 60%),radial-gradient(900px 600px at 110% 20%,#d6f0ff 0%,transparent 60%),linear-gradient(160deg,#f3f5fb,#eef1f8 55%,#e9f2f7)}
+  body.light .panel{background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,255,255,.72));box-shadow:0 6px 24px rgba(20,30,70,.08)}
+  body.light .panel h3{color:#1d2a4a}
+  body.light .kpi{background:rgba(255,255,255,.8);border-color:rgba(15,26,51,.08)}
+  body.light .kpi.bad .v{color:#c81e3a}
+  body.light nav button,body.light .chip,body.light .btn,body.light select,body.light input[type=search]{background:rgba(255,255,255,.75);color:var(--text)}
+  body.light nav button b{color:var(--text)} body.light nav button.on{background:#dbe7ff;color:#1d3a8a}
+  body.light .chip.on{background:#dbe7ff;color:#1d3a8a}
+  body.light .btn.primary{color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed)}
+  body.light select option{background:#fff}
+  body.light th{background:#e6ebf6;color:#3b4763} body.light th.sorted{color:#0f1a33}
+  body.light td{border-bottom-color:rgba(15,26,51,.07)} body.light tbody tr:hover{background:rgba(37,99,235,.07)}
+  body.light .ticker{background:rgba(200,30,58,.06);border-color:rgba(200,30,58,.25)}
+  body.light #tip,body.light #themePop,body.light .partCard,body.light .qrBox{background:#fffffff5;color:var(--text);box-shadow:0 10px 30px rgba(20,30,70,.15)}
+  body.light #drawer{background:linear-gradient(170deg,#f7f9fe,#eaf0fa)}
+  body.light #storyBar,body.light .sheet{background:#fffffff0;color:var(--text)}
+  body.light .sheet p{color:#33405c}
+  body.light #arUI .btn{background:#ffffffd9;color:#0f1a33} body.light #arUI .arCard{background:#ffffffe6;color:#0f1a33;border-color:rgba(37,99,235,.35)}
+  body.light #arUI .seg{background:#ffffffd9} body.light #arUI .seg button{color:#1d2a4a} body.light #arUI .seg button.on{background:#2563eb;color:#fff}
+  body.light #arUI .arHint{background:#ffffffd9;color:#0f1a33}
+  body.light .about p,body.light .about li{color:#33405c}
+  body.light .hint{background:#ffffffcc;color:#1d2a4a}
+  body.light .prog{background:rgba(15,26,51,.1)}
+  body.light .live{color:#c81e3a;border-color:#c81e3a55}
   @media (max-width:1100px){ .g-3{grid-column:span 6} .g-4{grid-column:span 6} .g-8{grid-column:span 12} }
   @media (max-width:700px){ .gaugeRow{grid-template-columns:repeat(2,1fr)} .gaugeRow .g1{height:115px} .grid{grid-template-columns:1fr} .grid>.panel{grid-column:1/-1} .kpis{grid-template-columns:repeat(2,1fr)} .kpi .v{font-size:19px}
     .kpi .spark{width:54px;height:22px} .clock .t{font-size:17px} .dtiles{grid-template-columns:repeat(2,1fr)} .dgrid>.panel{grid-column:1/-1}
@@ -153,8 +187,9 @@
 </head>
 <body>
 <header>
-  <div class="brand"><h1>Immersive Story Lab <span style="font-size:10px;color:#93a4c3;font-weight:500">v6</span></h1><div class="sub">Project Portfolio Command Centre · Day 3</div></div>
-  <div class="clock"><span class="live"><span class="live-dot"></span>LIVE</span><div><div class="t" id="clockT">--:--:--</div><div class="d" id="clockD"></div></div><span class="badge" title="All figures are invented for training">Practice data</span></div>
+  <div class="brand"><h1>Immersive Story Lab <span style="font-size:10px;color:#93a4c3;font-weight:500">v7</span></h1><div class="sub">Project Portfolio Command Centre · Day 3</div></div>
+  <div class="clock"><span class="live"><span class="live-dot"></span>LIVE</span><div><div class="t" id="clockT">--:--:--</div><div class="d" id="clockD"></div></div><button class="btn" id="themeBtn" title="Appearance: light/dark and colours">🎨</button><span class="badge" title="All figures are invented for training">Practice data</span></div>
+  <div id="themePop"></div>
 </header>
 <nav id="tabs">
   <button data-level="1" class="on"><b>Level 1</b>Interactive dashboard</button>

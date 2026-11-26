@@ -1,3 +1,4 @@
+import { PAL, TH, SETTINGS, HOLO, wallGlass, withGlass, onTheme, applyTheme, PALETTES } from './palette.js';
 // Level 2: augmented reality.
 //  • Camera AR (all phones): live camera feed + gyroscope; the dashboard floats in your room as holograms.
 //  • Desk AR (Android Chrome, WebXR): place a model on a real surface; tap bars for details.
@@ -11,6 +12,7 @@ import * as C from './charts.js';
 const $ = id => document.getElementById(id);
 let D;                                   // deps from app.js
 const s2 = new THREE.Scene();
+const bgColor = new THREE.Color(0x0a0e26);
 const holo = new THREE.Group();          // everything in camera-AR / preview mode (user at origin)
 const desk = new THREE.Group();          // small model for WebXR surface placement
 let metric = 'budget', selected = null, focus = [], insightIdx = -1;
@@ -42,9 +44,9 @@ function valueTexture(id, val, col) {
 }
 function buildChart() {
   const group = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.04, 2.0), new THREE.MeshStandardMaterial({ color: 0x1b2a6b, transparent: true, opacity: 0.55, roughness: 0.3 }));
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.04, 2.0), baseMat);
   base.position.y = -0.02; group.add(base);
-  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.04, 2.0)), new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.7, 0.04, 2.0)), edgeMat);
   edge.position.y = -0.02; group.add(edge);
   const bars = PROJECTS.map((p, i) => {
     const col = i % 4, row = Math.floor(i / 4), x = -0.9 + col * 0.6, z = -0.6 + row * 0.6;
@@ -57,6 +59,10 @@ function buildChart() {
   return { group, bars };
 }
 const charts = [];
+const baseMat = new THREE.MeshStandardMaterial({ color: 0x1b2a6b, transparent: true, opacity: 0.55, roughness: 0.3 });
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x38bdf8 }), ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+export function restyle() { const S = HOLO[SETTINGS.holo]; baseMat.color.set(S.base); edgeMat.color.set(S.accent); ringMat.color.set(S.accent);
+  bgColor.set(SETTINGS.mode === 'light' ? 0xdfe6f3 : 0x0a0e26); if (charts.length) { applyMetric(); redrawPanels(); } }
 function applyMetric() {
   const M = METRICS[metric];
   charts.forEach(ch => ch.bars.forEach(b => {
@@ -81,24 +87,24 @@ const holoPanels = [];
 let detailPanel;                          // floating project card next to the chart
 function drawDetail(p) {
   const c = detailPanel.canvas, g = c.getContext('2d'), w = c.width, h = c.height; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
-  const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, 'rgba(40,48,110,0.95)'); grad.addColorStop(1, 'rgba(12,16,44,0.95)');
+  const S = HOLO[SETTINGS.holo]; const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, S.a); grad.addColorStop(1, S.b);
   g.fillStyle = grad; D.roundRect(g, 3, 3, w - 6, h - 6, 34); g.fill(); g.strokeStyle = bandColor(p.band); g.lineWidth = 6; g.stroke();
-  g.fillStyle = '#93a4c3'; g.font = '28px system-ui, Arial'; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText(`${p.sector} · ${p.region} · PM ${p.pm}`, 30, 26);
-  g.fillStyle = '#fff'; g.font = 'bold 44px system-ui, Arial'; g.fillText(`${p.id} · ${p.name}`, 30, 62);
+  g.fillStyle = S.muted; g.font = '28px system-ui, Arial'; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText(`${p.sector} · ${p.region} · PM ${p.pm}`, 30, 26);
+  g.fillStyle = S.text; g.font = 'bold 44px system-ui, Arial'; g.fillText(`${p.id} · ${p.name}`, 30, 62);
   g.fillStyle = bandColor(p.band); D.roundRect(g, w - 210, 26, 180, 50, 25); g.fill(); g.fillStyle = '#081019'; g.font = 'bold 28px system-ui'; g.textAlign = 'center'; g.fillText(bandLabel(p.band), w - 120, 37);
   const cpi = curCPI(p), spi = curSPI(p), ev = p.ev + p.live.evDelta, ac = p.ac + p.live.acDelta;
   const rows = [['Budget', money(p.bac, 0)], ['Earned value', money(ev)], ['Actual cost', money(ac)], ['Forecast (EAC)', money(p.bac / cpi)], ['Forecast finish', `${p.slip > 0 ? '+' + p.slip + ' mo late' : 'on time'}`], ['Crew on site', String(p.live.crew)]];
   g.textAlign = 'left'; rows.forEach(([k, v], i) => { const x = 30 + (i % 2) * 330, y = 140 + Math.floor(i / 2) * 70;
-    g.fillStyle = '#93a4c3'; g.font = '24px system-ui'; g.fillText(k, x, y); g.fillStyle = '#fff'; g.font = 'bold 34px system-ui'; g.fillText(v, x, y + 28); });
-  const bands = [[0.6, 0.85, '#f0505a'], [0.85, 0.95, '#f5a524'], [0.95, 1.2, '#2fbf7a']];
-  g.save(); g.translate(690, 120); g.scale(1.6, 1.6); C.gauge(g, 190, 150, { value: cpi, label: 'CPI', bands, min: 0.6, max: 1.2, target: 1 }); g.restore();
-  g.save(); g.translate(690, 360); g.scale(1.6, 1.6); C.gauge(g, 190, 150, { value: spi, label: 'SPI', bands, min: 0.6, max: 1.2, target: 1 }); g.restore();
-  g.save(); g.translate(30, 360); g.scale(2, 2); C.lineChart(g, 320, 125, { labels: p.cpiTrend.map((_, i) => ''), legend: false, yFmt: v => v.toFixed(2),
-    series: [{ name: 'CPI', color: bandColor(p.band), values: p.cpiTrend, fill: true }, { name: 't', color: 'rgba(255,255,255,.4)', values: p.cpiTrend.map(() => 1), dashed: true, hideLegend: true }] }); g.restore();
-  g.fillStyle = '#93a4c3'; g.font = '24px system-ui'; g.fillText('CPI trend, last 12 months', 30, 338);
+    g.fillStyle = S.muted; g.font = '24px system-ui'; g.fillText(k, x, y); g.fillStyle = S.text; g.font = 'bold 34px system-ui'; g.fillText(v, x, y + 28); });
+  const bands = [[0.6, 0.85, PAL.risk], [0.85, 0.95, PAL.watch], [0.95, 1.2, PAL.ok]];
+  g.save(); g.translate(690, 120); g.scale(1.6, 1.6); withGlass(S, () => C.gauge(g, 190, 150, { value: cpi, label: 'CPI', bands, min: 0.6, max: 1.2, target: 1 })); g.restore();
+  g.save(); g.translate(690, 360); g.scale(1.6, 1.6); withGlass(S, () => C.gauge(g, 190, 150, { value: spi, label: 'SPI', bands, min: 0.6, max: 1.2, target: 1 })); g.restore();
+  g.save(); g.translate(30, 360); g.scale(2, 2); withGlass(S, () => C.lineChart(g, 320, 125, { labels: p.cpiTrend.map((_, i) => ''), legend: false, yFmt: v => v.toFixed(2),
+    series: [{ name: 'CPI', color: bandColor(p.band), values: p.cpiTrend, fill: true }, { name: 't', color: 'rgba(255,255,255,.4)', values: p.cpiTrend.map(() => 1), dashed: true, hideLegend: true }] })); g.restore();
+  g.fillStyle = S.muted; g.font = '24px system-ui'; g.fillText('CPI trend, last 12 months', 30, 338);
   detailPanel.tex.needsUpdate = true;
 }
-function redrawPanels(only) { const ctx = ctxFor(PROJECTS); holoPanels.forEach(p => { if (only && p.id !== only) return; D.drawGlassPanel(p.canvas, p.id, ctx); p.tex.needsUpdate = true; });
+function redrawPanels(only) { const ctx = ctxFor(PROJECTS); holoPanels.forEach(p => { if (only && p.id !== only) return; D.drawGlassPanel(p.canvas, p.id, ctx, HOLO[SETTINGS.holo]); p.tex.needsUpdate = true; });
   if (selected && detailPanel.mesh.visible) drawDetail(byId[selected]); }
 
 // ---------- build scene ----------
@@ -108,7 +114,7 @@ export function initAR(deps) {
   s2.add(holo); s2.add(desk);
   // centre: chart below eye level, ~1.7 m ahead
   const hc = buildChart(); hc.group.scale.setScalar(0.42); hc.group.position.set(0, -0.62, -1.95); hc.group.rotation.x = 0.12; holo.add(hc.group); charts.push(hc);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.78, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.78, 64).rotateX(-Math.PI / 2), ringMat);
   ring.position.set(0, -0.66, -1.95); holo.add(ring);
   const P = (id, ang, y, r, w = 0.92, h = 0.575) => { const p = makePanel(id, w, h); p.home = new THREE.Vector3(Math.sin(ang) * r, y, -Math.cos(ang) * r);
     p.mesh.position.copy(p.home); p.mesh.lookAt(0, y, 0); p.target = p.home.clone(); p.s = 1; p.sT = 1; holo.add(p.mesh); holoPanels.push(p); };
@@ -227,7 +233,7 @@ export function exitAR() {
 }
 // Apple Quick Look only renders MeshStandardMaterial, so every label and panel uses it (with an emissive map so it glows).
 const qlMat = tex => new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, roughness: 1, metalness: 0, transparent: true });
-function qlPanel(id, w, h, res = [1024, 640]) { const c = document.createElement('canvas'); [c.width, c.height] = res; D.drawGlassPanel(c, id, ctxFor(PROJECTS));
+function qlPanel(id, w, h, res = [1024, 640]) { const c = document.createElement('canvas'); [c.width, c.height] = res; D.drawGlassPanel(c, id, ctxFor(PROJECTS), HOLO[SETTINGS.holo]);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.Mesh(new THREE.PlaneGeometry(w, h), qlMat(t)); }
 export async function makeUSDZ() {
   const tmp = buildChart(); const M = METRICS[metric];
@@ -240,7 +246,7 @@ export async function makeUSDZ() {
   const k = qlPanel('kpis', 2.4, 1.5); k.position.set(-2.6, 1.0, -0.3); k.rotation.y = 0.6; tmp.group.add(k);
   const o = qlPanel('overrun', 2.4, 1.5); o.position.set(2.6, 1.0, -0.3); o.rotation.y = -0.6; tmp.group.add(o);
   const tt = D.textTexture((gg, w, h) => { gg.fillStyle = 'rgba(10,14,40,0.9)'; D.roundRect(gg, 4, 4, w - 8, h - 8, 30); gg.fill(); gg.fillStyle = '#fff'; gg.textAlign = 'center'; gg.textBaseline = 'middle';
-    gg.font = 'bold 54px system-ui, Arial'; gg.fillText(`Atlas Projects Group · ${M.label}`, w / 2, h * 0.4); gg.font = '34px system-ui, Arial'; gg.fillStyle = '#f5a524'; gg.fillText('Practice data for training', w / 2, h * 0.75); }, 1024, 180);
+    gg.font = 'bold 54px system-ui, Arial'; gg.fillText(`Atlas Projects Group · ${M.label}`, w / 2, h * 0.4); gg.font = '34px system-ui, Arial'; gg.fillStyle = PAL.watch; gg.fillText('Practice data for training', w / 2, h * 0.75); }, 1024, 180);
   const title = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.42), qlMat(tt)); title.position.set(0, 0.25, 1.25); title.rotation.x = -0.5; tmp.group.add(title);
   tmp.group.scale.setScalar(0.16); const holder = new THREE.Scene(); holder.add(tmp.group); holder.updateMatrixWorld(true);
   return new USDZExporter().parseAsync(holder, { quickLookCompatible: true });
@@ -288,7 +294,7 @@ export function render(k, frame) {
   s2.background = camMode && videoStream ? null : bgColor;
   D.renderer.render(s2, cam);
 }
-const bgColor = new THREE.Color(0x0a0e26);
+
 export function onTick() { if (metric === 'crew' || metric === 'cpi' || metric === 'overrun') applyMetric(); redrawPanels(); }
 export function onSecond() { redrawPanels('clock'); const c = $('arClock'); if (c) c.textContent = new Date().toLocaleTimeString('en-GB'); }
 export { s2 };

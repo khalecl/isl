@@ -1,10 +1,11 @@
+import { PAL, TH, SETTINGS, HOLO, wallGlass, withGlass, onTheme, applyTheme, PALETTES } from './palette.js';
 import * as THREE from 'three';
 import * as AR from './ar.js';
 import { PROJECTS, BANDS, COMPANY, DATA_DATE, fmt, money, bandColor, bandLabel, tick } from './data.js';
 import { PANELS, ctxFor } from './panels.js';
 import * as C from './charts.js';
 import { initDashboard, renderAll, openProject } from './dashboard.js';
-import { initTwin } from './twin.js';
+import { initTwin, twinRefresh } from './twin.js';
 
 const $ = id => document.getElementById(id);
 
@@ -28,17 +29,17 @@ function labelTexture(text) {
     g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'bold 120px system-ui, Arial'; g.fillText(text, w / 2, h / 2); });
 }
 // draw a registry panel as a glass card onto a canvas (used for 3D panels)
-function drawGlassPanel(canvas, id, ctx) {
+function drawGlassPanel(canvas, id, ctx, style = wallGlass()) {
   const g = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
-  const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, 'rgba(40,48,96,0.97)'); grad.addColorStop(1, 'rgba(14,18,44,0.97)');
+  const grad = g.createLinearGradient(0, 0, w, h); grad.addColorStop(0, style.a); grad.addColorStop(1, style.b);
   g.fillStyle = grad; roundRect(g, 3, 3, w - 6, h - 6, 34); g.fill();
-  g.strokeStyle = 'rgba(160,200,255,0.35)'; g.lineWidth = 3; g.stroke(); g.lineWidth = 1;
-  g.fillStyle = '#cfe0ff'; g.font = '600 30px system-ui, Arial'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(PANELS[id].title, 30, 40);
+  g.strokeStyle = style.border; g.lineWidth = 4; g.stroke(); g.lineWidth = 1;
+  g.fillStyle = style.title; g.font = '600 30px system-ui, Arial'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(PANELS[id].title, 30, 40);
   g.fillStyle = '#ff4d5a'; g.beginPath(); g.arc(w - 36, 40, 8, 0, 7); g.fill();
   // charts are designed at ~half this resolution: scale 2× for crisp text
   g.save(); g.translate(22, 74); g.scale(2, 2);
-  PANELS[id].draw(g, (w - 44) / 2, (h - 96) / 2, ctx);
+  withGlass(style, () => PANELS[id].draw(g, (w - 44) / 2, (h - 96) / 2, ctx));
   g.restore();
 }
 const stage = $('stage');
@@ -69,7 +70,8 @@ const renderLevel2 = () => AR.renderLevel2(supportsAR, supportsQuickLook);
 
 // ============ LEVEL 3: immersive wall + sorting activity ============
 const s3 = new THREE.Scene(); s3.background = new THREE.Color(0x070a1c); s3.fog = new THREE.Fog(0x070a1c, 6, 14); addLights(s3);
-{ const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshStandardMaterial({ color: 0x0f1430 })); floor.rotation.x = -Math.PI / 2; s3.add(floor);
+const floor3 = new THREE.MeshStandardMaterial({ color: 0x0f1430 });
+{ const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), floor3); floor.rotation.x = -Math.PI / 2; s3.add(floor);
   const grid = new THREE.PolarGridHelper(6, 16, 8, 64, 0x2a3570, 0x1a2150); grid.position.y = 0.003; s3.add(grid);
   // soft glowing ring under the user
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.6, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5 })); ring.position.y = 0.01; s3.add(ring); }
@@ -106,7 +108,7 @@ const sortGroup = new THREE.Group(); sortGroup.visible = false; s3.add(sortGroup
 const CARD_W = 0.56, CARD_H = 0.34, RING = 2.4, BANNER_ANGLES = { risk: -0.46, watch: 0, ok: 0.46 };
 function cardTexture(p, st) {
   return textTexture((g, w, h) => {
-    const border = st.checked ? (st.correct ? '#2fbf7a' : '#f0505a') : st.selected ? '#38bdf8' : '#3a4b83';
+    const border = st.checked ? (st.correct ? PAL.ok : PAL.risk) : st.selected ? '#38bdf8' : '#3a4b83';
     g.fillStyle = '#f4f7fb'; roundRect(g, 6, 6, w - 12, h - 12, 26); g.fill();
     g.lineWidth = st.selected || st.checked ? 14 : 6; g.strokeStyle = border; roundRect(g, 8, 8, w - 16, h - 16, 24); g.stroke();
     g.fillStyle = '#0b1220'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
@@ -311,6 +313,24 @@ $('about').innerHTML = `
 <li>On the immersive wall, did seeing all panels at once change what you noticed? What did you miss?</li><li>For your own job, which level is worth the extra effort, and for which audience?</li></ol>
 <p class="muted small">Practice data only. Not real projects, companies or figures.</p>`;
 
+const startTwin = location.hash === '#twin' || new URLSearchParams(location.search).has('asset');
 initTwin();
-setLevel(location.hash === '#twin' || new URLSearchParams(location.search).has('asset') ? 4 : 1);
+function themeMenu() {
+  const seg = (key, opts) => `<div class="tseg">${Object.entries(opts).map(([k, l]) => `<button data-k="${key}" data-v="${k}" class="${SETTINGS[key] === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  $('themePop').innerHTML = `<b>Appearance</b><div class="tlab">Mode</div>${seg('mode', { dark: '🌙 Dark', light: '☀️ Light' })}
+    <div class="tlab">Status colours</div>${seg('palette', Object.fromEntries(Object.entries(PALETTES).map(([k, p]) => [k, `<i style="background:${p.risk}"></i><i style="background:${p.watch}"></i><i style="background:${p.ok}"></i> ${p.label}`])))}
+    <div class="tlab">Level 2 hologram style</div>${seg('holo', Object.fromEntries(Object.entries(HOLO).map(([k, h]) => [k, `<i style="background:#${h.accent.toString(16).padStart(6, '0')}"></i> ${h.label}`])))}
+    <div class="muted small" style="margin-top:6px">Saved on this device.</div>`;
+}
+$('themeBtn').onclick = e => { e.stopPropagation(); themeMenu(); $('themePop').classList.toggle('open'); };
+$('themePop').onclick = e => { e.stopPropagation(); const b = e.target.closest('button'); if (!b) return; applyTheme({ [b.dataset.k]: b.dataset.v }); themeMenu(); };
+document.addEventListener('click', () => $('themePop').classList.remove('open'));
+onTheme(() => {
+  const light = SETTINGS.mode === 'light';
+  s3.background.set(light ? 0xdfe6f3 : 0x070a1c); s3.fog.color.set(light ? 0xdfe6f3 : 0x070a1c); floor3.color.set(light ? 0xc9d3e6 : 0x0f1430);
+  redrawWall(); if ($('dash').offsetParent) renderAll(); AR.restyle(); twinRefresh();
+  cards.forEach(refreshCard);
+});
+applyTheme();
+setLevel(startTwin ? 4 : 1);
 window.__lab = { makeUSDZ: AR.makeUSDZ, AR, pick3, cards, banners, checkGroups, setL3Mode, wallPanels };   // used by automated tests only

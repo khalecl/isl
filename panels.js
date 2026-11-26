@@ -1,9 +1,10 @@
+import { PAL, TH, SETTINGS, HOLO, wallGlass, withGlass, onTheme, applyTheme, PALETTES } from './palette.js';
 // Panel registry: each panel draws itself with the chart library.
 // The same panels are used in the Level 1 dashboard and on the Level 3 floating glass wall.
 import * as C from './charts.js';
 import { PROJECTS, MONTHS, T, DATA_DATE, SECTORS, SECTOR_COLORS, bandColor, bandLabel, curCPI, curSPI, portfolio, fmt, money, ALERTS } from './data.js';
 
-const cpiBands = [[0.6, 0.85, '#f0505a'], [0.85, 0.95, '#f5a524'], [0.95, 1.2, '#2fbf7a']];
+const cpiBands = [[0.6, 0.85, PAL.risk], [0.85, 0.95, PAL.watch], [0.95, 1.2, PAL.ok]];
 const tipP = p => `<b>${p.id} · ${p.name}</b><br>${p.sector} · ${p.region}<br>CPI ${curCPI(p).toFixed(2)} · SPI ${curSPI(p).toFixed(2)}<br>Budget ${money(p.bac, 0)} · Forecast ${money(p.bac / curCPI(p))}<br><span style="color:${bandColor(p.band)}">${bandLabel(p.band)}</span>`;
 
 export function kpiList(P) {
@@ -11,11 +12,11 @@ export function kpiList(P) {
     { k: 'Portfolio budget', v: money(P.bac, 0), s: `${P.n} projects`, spark: P.pvS.slice(T - 11, T + 1) },
     { k: 'Earned value', v: money(P.ev, 1), s: `${(P.pc * 100).toFixed(1)}% complete`, spark: P.evS.slice(T - 11, T + 1), c: '#38bdf8' },
     { k: 'Actual cost', v: money(P.ac, 1), s: `CV ${money(P.ev - P.ac)}`, spark: P.acS.slice(T - 11, T + 1), c: '#f472b6', bad: P.ev < P.ac },
-    { k: 'Forecast overrun', v: money(P.overrun, 1), s: `EAC ${money(P.eac, 0)}`, c: '#f0505a', bad: P.overrun > 0 },
+    { k: 'Forecast overrun', v: money(P.overrun, 1), s: `EAC ${money(P.eac, 0)}`, c: PAL.risk, bad: P.overrun > 0 },
     { k: 'Portfolio CPI', v: P.cpi.toFixed(3), s: P.cpi < 1 ? 'over budget' : 'under budget', bad: P.cpi < 0.95, c: bandColor(P.cpi < 0.85 ? 'risk' : P.cpi < 0.95 ? 'watch' : 'ok') },
     { k: 'Portfolio SPI', v: P.spi.toFixed(3), s: P.spi < 1 ? 'behind plan' : 'ahead of plan', bad: P.spi < 0.95, c: bandColor(P.spi < 0.85 ? 'risk' : P.spi < 0.95 ? 'watch' : 'ok') },
     { k: 'Crew on site (live)', v: fmt(P.crew, 0), s: 'all active sites', c: '#a78bfa' },
-    { k: 'Critical risks', v: String(P.critical), s: `${P.risks} open risks`, bad: P.critical > 5, c: '#f5a524' },
+    { k: 'Critical risks', v: String(P.critical), s: `${P.risks} open risks`, bad: P.critical > 5, c: PAL.watch },
   ];
 }
 
@@ -37,7 +38,7 @@ export const PANELS = {
       { name: 'AC forecast', color: '#f472b6', values: sl(P.acF), dashed: true } ] }); } },
   overrun: { title: 'Forecast overrun by project (USD M), sorted', draw(g, w, h, { list }) {
     const items = [...list].map(p => ({ p, o: p.bac / curCPI(p) - p.bac })).sort((a, b) => b.o - a.o)
-      .map(({ p, o }) => ({ label: p.id, value: o, color: o > 0 ? bandColor(p.band) : '#2fbf7a', tip: tipP(p), id: p.id }));
+      .map(({ p, o }) => ({ label: p.id, value: o, color: o > 0 ? bandColor(p.band) : PAL.ok, tip: tipP(p), id: p.id }));
     return C.barH(g, w, h, { items, fmt: v => (v > 0 ? '+' : '') + v.toFixed(1), labelW: 32 }); } },
   matrix: { title: 'Performance matrix: CPI vs SPI (bubble = budget)', draw(g, w, h, { list }) {
     const mx = Math.max(...PROJECTS.map(p => p.bac)), k = Math.min(w, h) / 300;
@@ -61,7 +62,7 @@ export const PANELS = {
       g.fillText(fmt(p.live.crew, 0), w * 0.2, y);
       const bx = w * 0.38, bw = w * 0.5, u = p.live.util / 100;
       g.fillStyle = 'rgba(255,255,255,.08)'; C.rr(g, bx, y - rowH * 0.22, bw, rowH * 0.44, 4); g.fill();
-      g.fillStyle = u < 0.5 ? '#f5a524' : '#2fbf7a'; C.rr(g, bx, y - rowH * 0.22, bw * u, rowH * 0.44, 4); g.fill();
+      g.fillStyle = u < 0.5 ? PAL.watch : PAL.ok; C.rr(g, bx, y - rowH * 0.22, bw * u, rowH * 0.44, 4); g.fill();
       g.fillStyle = C.TH.text; g.textAlign = 'right'; g.fillText(p.live.util + '%', w - 2, y);
       hits.push({ x: 0, y: y - rowH / 2, w, h: rowH, html: `<b>${p.id} ${p.name}</b><br>Crew on site: ${p.live.crew}<br>Equipment utilisation: ${p.live.util}%`, id: p.id }); });
     return hits; } },
@@ -76,7 +77,7 @@ export const PANELS = {
     return [{ x: 0, y: 0, w, h, html: 'TRIR = recordable injuries × 200,000 ÷ man-hours' }]; } },
   alerts: { title: 'Alerts feed', draw(g, w, h) {
     const rowH = 24, n = Math.floor((h - 4) / rowH);
-    ALERTS.slice(0, n).forEach((a, i) => { const y = 4 + i * rowH + rowH / 2, c = a.lvl === 'risk' ? '#f0505a' : a.lvl === 'watch' ? '#f5a524' : '#38bdf8';
+    ALERTS.slice(0, n).forEach((a, i) => { const y = 4 + i * rowH + rowH / 2, c = a.lvl === 'risk' ? PAL.risk : a.lvl === 'watch' ? PAL.watch : '#38bdf8';
       g.fillStyle = c; g.beginPath(); g.arc(8, y, 4, 0, 7); g.fill();
       g.fillStyle = C.TH.muted; g.font = `11px ${C.TH.font}`; g.textAlign = 'left'; g.textBaseline = 'middle';
       g.fillText(a.time.toLocaleTimeString('en-GB'), 18, y); g.fillStyle = C.TH.text; g.fillText(a.msg, 82, y); });

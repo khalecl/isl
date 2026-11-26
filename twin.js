@@ -1,3 +1,4 @@
+import { PAL, TH, SETTINGS, HOLO, wallGlass, withGlass, onTheme, applyTheme, PALETTES } from './palette.js';
 // Digital Twin tab: two simulated assets with live sensors, 3D model, trends, alarms, what-if and QR tags.
 // PRACTICE DATA — simplified physics for teaching, not an engineering model.
 import * as THREE from 'three';
@@ -56,7 +57,7 @@ const ASSETS = {
   },
 };
 const statusOf = (s, v) => s.warn == null ? 'ok' : s.low ? (v <= s.alarm ? 'alarm' : v <= s.warn ? 'warn' : 'ok') : (v >= s.alarm ? 'alarm' : v >= s.warn ? 'warn' : 'ok');
-const SC = { ok: '#2fbf7a', warn: '#f5a524', alarm: '#f0505a' };
+const SC = { get ok() { return PAL.ok; }, get warn() { return PAL.watch; }, get alarm() { return PAL.risk; } };
 
 // ---------- live simulation ----------
 const HIST = 144;                           // 144 points = last 24 h at 10-min resolution (time is compressed: 1 tick = 10 min)
@@ -89,7 +90,7 @@ function health(a) {
 // remaining useful life of the weakest part (illustrative): bearing/engine wear reaching 0.8
 function rulDays(a, st = a.st) { const rate = a.scenario === 'bearing' && st === a.st ? 0.04 * 6 * 24 : 0.00002 * 6 * 24 * (0.6 + st.load);
   return Math.max(0, (0.8 - st.wear) / rate); }
-const lifeTxt = d => d <= 0 ? '<span style="color:#f0505a">due now</span>' : d < 2 ? `${Math.round(d * 24)} hours` : `${Math.round(d)} days`;
+const lifeTxt = d => d <= 0 ? `<span style="color:${PAL.risk}">due now</span>` : d < 2 ? `${Math.round(d * 24)} hours` : `${Math.round(d)} days`;
 
 // ---------- scenarios ----------
 const SCEN = {
@@ -184,7 +185,7 @@ export function initTwin() {
   box.prepend(renderer.domElement); renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none';
   scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
   scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x202840, 2.2)); const dl = new THREE.DirectionalLight(0xffffff, 2); dl.position.set(3, 5, 4); scene.add(dl);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), new THREE.MeshStandardMaterial({ color: 0x141a38 })); floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  floorMat = new THREE.MeshStandardMaterial({ color: 0x141a38 }); const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 48), floorMat); floor.rotation.x = -Math.PI / 2; scene.add(floor);
   const grid = new THREE.PolarGridHelper(3.2, 12, 6, 48, 0x2a3570, 0x1d2550); grid.position.y = 0.002; scene.add(grid);
   new ResizeObserver(() => { const w = box.clientWidth, h = box.clientHeight; if (w && h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); } }).observe(box);
   let down = null, moved = 0;
@@ -222,7 +223,7 @@ function select(id) {
   $('tTrendSel').innerHTML = ASSETS[id].sensors.filter(s => s.warn != null || s.k === 'power').map(s => `<option value="${s.k}">${s.l}</option>`).join('');
   $('tTrendSel').value = 'wT';
   setAsset3D(id); buildWhatIf(); buildScen(); refresh();
-  const u = new URL(location.href); u.searchParams.set('asset', id); history.replaceState(null, '', u);
+  if ($('twin').offsetParent) { const u = new URL(location.href); u.searchParams.set('asset', id); history.replaceState(null, '', u); }
 }
 function refresh() {
   const a = ASSETS[cur], h = health(a);
@@ -230,7 +231,7 @@ function refresh() {
   $('tStatus').innerHTML = `<span class="pill big" style="background:${SC[worst]}">${worst === 'ok' ? 'Normal' : worst === 'warn' ? 'Warning' : 'ALARM'}</span>`;
   $('tInfo').innerHTML = `<table class="info"><tr><td>Asset</td><td><b>${a.id}</b> · ${a.type}</td></tr><tr><td>Location</td><td>${a.site}</td></tr><tr><td>Rating</td><td>${a.rated}</td></tr><tr><td>Installed</td><td>${a.installed}</td></tr>
     <tr><td>Running hours</td><td>${Math.round(a.st.hours).toLocaleString('en-US')} h</td></tr><tr><td>Predicted life of weakest part</td><td><b>${lifeTxt(rulDays(a))}</b></td></tr></table>`;
-  C.paint($('tHealth'), C.gauge, { value: h, label: 'Health score', min: 0, max: 100, bands: [[0, 50, '#f0505a'], [50, 75, '#f5a524'], [75, 101, '#2fbf7a']], fmt: v => v.toFixed(0) });
+  C.paint($('tHealth'), C.gauge, { value: h, label: 'Health score', min: 0, max: 100, bands: [[0, 50, PAL.risk], [50, 75, PAL.watch], [75, 101, PAL.ok]], fmt: v => v.toFixed(0) });
   $('tGauges').innerHTML = a.sensors.map(s => `<div class="g1"><canvas data-k="${s.k}"></canvas></div>`).join('');
   $('tGauges').querySelectorAll('canvas').forEach(cv => { const s = a.sensors.find(x => x.k === cv.dataset.k), v = a.now[s.k];
     const bands = s.warn == null ? [[s.min, s.max + 1, '#38bdf8']] : s.low ? [[s.min, s.alarm, SC.alarm], [s.alarm, s.warn, SC.warn], [s.warn, s.max + 1, SC.ok]] : [[s.min, s.warn, SC.ok], [s.warn, s.alarm, SC.warn], [s.alarm, s.max + 1, SC.alarm]];
@@ -303,3 +304,5 @@ function printTags() {
   w.document.close();
 }
 export const twinAssets = ASSETS;
+let floorMat;
+export function twinRefresh() { if (!renderer) return; floorMat.color.set(document.body.classList.contains('light') ? 0xc9d3e6 : 0x141a38); refresh(); }

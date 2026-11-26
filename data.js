@@ -1,3 +1,4 @@
+import { PAL } from './palette.js';
 // PRACTICE DATA — invented for training. "Atlas Projects Group" is a fictional company.
 // Units: USD millions unless stated. Monthly calendar Jan 2025 → Dec 2029.
 // Earned Value Management (EVM): PV planned value, EV earned value, AC actual cost,
@@ -26,9 +27,9 @@ const RAW = [
 ];
 
 export const BANDS = [
-  { key: 'risk', label: 'At risk', rule: 'CPI below 0.85', color: '#f0505a' },
-  { key: 'watch', label: 'Watch', rule: 'CPI 0.85 to 0.95', color: '#f5a524' },
-  { key: 'ok', label: 'On track', rule: 'CPI 0.95 or above', color: '#2fbf7a' },
+  { key: 'risk', label: 'At risk', rule: 'CPI below 0.85', get color() { return PAL.risk; } },
+  { key: 'watch', label: 'Watch', rule: 'CPI 0.85 to 0.95', get color() { return PAL.watch; } },
+  { key: 'ok', label: 'On track', rule: 'CPI 0.95 or above', get color() { return PAL.ok; } },
 ];
 export const bandOf = cpi => cpi < 0.85 ? 'risk' : cpi < 0.95 ? 'watch' : 'ok';
 export const bandColor = k => BANDS.find(b => b.key === k).color;

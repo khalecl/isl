@@ -1,7 +1,7 @@
 // Tiny canvas chart library. Every function draws into a 2D context of size w×h
 // and returns "hits" (areas with tooltip HTML) so the dashboard can show tooltips.
-export const TH = { text: '#e6efff', muted: '#93a4c3', grid: 'rgba(255,255,255,0.08)', axis: 'rgba(255,255,255,0.22)',
-  font: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif' };
+import { TH, PAL } from './palette.js';
+export { TH, PAL };
 const F = (px, w = 400) => `${w} ${px}px ${TH.font}`;
 const niceMax = v => { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; };
 const short = (v) => Math.abs(v) >= 1000 ? (v / 1000).toFixed(1) + 'k' : Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1);
@@ -136,7 +136,7 @@ export function scatter(g, w, h, { points, xLabel, yLabel, xr = [0.7, 1.15], yr 
 export function heatmap(g, w, h, { matrix }) {
   const hits = [], padL = 22, padB = 22, padT = 4, cw = (w - padL - 4) / 5, ch = (h - padB - padT) / 5;
   for (let L = 0; L < 5; L++) for (let I = 0; I < 5; I++) {
-    const score = (L + 1) * (I + 1), c = score >= 15 ? '#f0505a' : score >= 8 ? '#f5a524' : '#2fbf7a';
+    const score = (L + 1) * (I + 1), c = score >= 15 ? PAL.risk : score >= 8 ? PAL.watch : PAL.ok;
     const x = padL + I * cw, y = padT + (4 - L) * ch, n = matrix[L][I];
     g.fillStyle = c + (n ? 'cc' : '33'); rr(g, x + 2, y + 2, cw - 4, ch - 4, 4); g.fill();
     if (n) { g.fillStyle = '#0b1020'; g.font = F(Math.min(16, ch * 0.45), 700); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n, x + cw / 2, y + ch / 2); }
@@ -160,7 +160,7 @@ export function gantt(g, w, h, { rows, labels, from, to, marker }) {
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.moveTo(X(r.start), y); g.lineTo(X(r.plan), y); g.stroke(); g.lineWidth = 1;
     const diamond = (x, c, filled) => { g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 6, y); g.lineTo(x, y + 6); g.lineTo(x - 6, y); g.closePath(); if (filled) { g.fillStyle = c; g.fill(); } else { g.strokeStyle = c; g.lineWidth = 2; g.stroke(); g.lineWidth = 1; } };
     diamond(X(r.plan), 'rgba(255,255,255,.7)', false);
-    const late = r.forecast > r.plan; diamond(X(r.forecast), r.done ? '#2fbf7a' : late ? '#f0505a' : '#38bdf8', true);
+    const late = r.forecast > r.plan; diamond(X(r.forecast), r.done ? PAL.ok : late ? PAL.risk : '#38bdf8', true);
     hits.push({ x: 0, y: y - rowH / 2, w, h: rowH, html: `<b>${r.label}</b><br>Plan: ${labels[r.plan]}<br>${r.done ? 'Achieved' : 'Forecast'}: ${labels[r.forecast]}${late && !r.done ? ` (<b>${r.forecast - r.plan} mo late</b>)` : ''}` }); });
   if (marker != null) { g.strokeStyle = 'rgba(255,255,255,.5)'; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(X(marker), padT); g.lineTo(X(marker), h); g.stroke(); g.setLineDash([]); }
   return hits;

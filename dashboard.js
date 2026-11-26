@@ -1,3 +1,4 @@
+import { PAL, TH, SETTINGS, HOLO, wallGlass, withGlass, onTheme, applyTheme, PALETTES } from './palette.js';
 // Level 1: interactive command-centre dashboard
 import * as C from './charts.js';
 import { PANELS, kpiList, ctxFor } from './panels.js';
@@ -70,7 +71,7 @@ const COLS = [
 function renderTable(list) {
   const col = COLS.find(c => c[0] === state.sort);
   const rows = [...list].sort((a, b) => { const x = col[2](a), y = col[2](b); return (x > y ? 1 : x < y ? -1 : 0) * state.dir; });
-  const pill = (v, good) => `<span class="pill" style="background:${v < 0.85 ? '#f0505a' : v < 0.95 ? '#f5a524' : '#2fbf7a'}">${v.toFixed(2)}</span>`;
+  const pill = (v, good) => `<span class="pill" style="background:${v < 0.85 ? PAL.risk : v < 0.95 ? PAL.watch : PAL.ok}">${v.toFixed(2)}</span>`;
   $('dTable').innerHTML = `<thead><tr>${COLS.map(c => `<th data-k="${c[0]}" class="${c[2] ? 'sortable' : ''} ${state.sort === c[0] ? 'sorted' : ''}">${c[1]}${state.sort === c[0] ? (state.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>
   <tbody>${rows.map(p => { const pc = (p.ev + p.live.evDelta) / p.bac, o = p.bac / curCPI(p) - p.bac;
     return `<tr data-id="${p.id}" class="${state.hl && state.hl.includes(p.id) ? 'hl' : ''}"><td><b>${p.id}</b></td><td>${p.name}<div class="muted small">${p.pm}</div></td><td><i class="dot" style="background:var(--s-${p.sector})"></i>${p.sector}</td><td>${p.region}</td>
@@ -102,12 +103,12 @@ function renderDrawer(id, live) {
       <section class="panel g-12"><h3>Milestones: plan ◇ vs forecast ◆</h3><div class="cv h200"><canvas id="dvM"></canvas></div></section>
       <section class="panel g-6"><h3>Cost to date by type</h3><div class="cv h180"><canvas id="dvC"></canvas></div></section>
       <section class="panel g-6"><h3>CPI trend, last 12 months</h3><div class="cv h180"><canvas id="dvT"></canvas></div></section>
-      <section class="panel g-12"><h3>Top risks</h3><table class="rtable"><thead><tr><th>ID</th><th>Risk</th><th>L</th><th>I</th><th>Score</th></tr></thead><tbody>${p.risks.slice(0, 6).map(r => `<tr><td>${r.id}</td><td>${r.title}</td><td>${r.L}</td><td>${r.I}</td><td><span class="pill" style="background:${r.score >= 15 ? '#f0505a' : r.score >= 8 ? '#f5a524' : '#2fbf7a'}">${r.score}</span></td></tr>`).join('')}</tbody></table></section>
+      <section class="panel g-12"><h3>Top risks</h3><table class="rtable"><thead><tr><th>ID</th><th>Risk</th><th>L</th><th>I</th><th>Score</th></tr></thead><tbody>${p.risks.slice(0, 6).map(r => `<tr><td>${r.id}</td><td>${r.title}</td><td>${r.L}</td><td>${r.I}</td><td><span class="pill" style="background:${r.score >= 15 ? PAL.risk : r.score >= 8 ? PAL.watch : PAL.ok}">${r.score}</span></td></tr>`).join('')}</tbody></table></section>
       <section class="panel g-12"><h3>Safety & quality</h3><div class="dtiles">${[['Man-hours', fmt(p.hse.manHours / 1e3, 0) + 'k'], ['Lost-time injuries', p.hse.lti], ['Recordables', p.hse.recordables], ['TRIR', p.hse.trir.toFixed(2)], ['Open NCRs', p.quality.ncr], ['Open RFIs', p.quality.rfi]].map(([k, v]) => `<div class="kpi"><div class="k">${k}</div><div class="v sm">${v}</div></div>`).join('')}</div></section>
     </div>`;
   }
   $('dTiles').innerHTML = tiles.map(([k, v]) => `<div class="kpi"><div class="k">${k}</div><div class="v sm">${v}</div></div>`).join('');
-  const bands = [[0.6, 0.85, '#f0505a'], [0.85, 0.95, '#f5a524'], [0.95, 1.2, '#2fbf7a']];
+  const bands = [[0.6, 0.85, PAL.risk], [0.85, 0.95, PAL.watch], [0.95, 1.2, PAL.ok]];
   C.paint($('dvG'), (g, w, h) => { const gw = w / 3; [[cpi, 'CPI', bands, 0.6, 1.2], [spi, 'SPI', bands, 0.6, 1.2], [ev / p.bac * 100, '% complete', [[0, 100, '#38bdf8']], 0, 100]].forEach(([v, l, b, mn, mx], i) => { g.save(); g.translate(gw * i, 0); C.gauge(g, gw, h, { value: v, label: l, bands: b, min: mn, max: mx, target: l === '% complete' ? null : 1, fmt: l === '% complete' ? x => x.toFixed(0) + '%' : x => x.toFixed(2) }); g.restore(); }); return []; });
   if (live && body.dataset.drawn === id) return;
   body.dataset.drawn = id;
